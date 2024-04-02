@@ -1,0 +1,137 @@
+{
+    "moods": {
+        "Happy":[
+            {
+                "mood": "expect",
+                "path": ["assets\\images\\firefly\\Happy\\expect.gif"]
+            },
+            {
+                "mood": "happy",
+                "path": [
+                    "assets\\images\\firefly\\Happy\\happy.gif",
+                    "assets\\images\\firefly\\Happy\\happy_1.gif",
+                    "assets\\images\\firefly\\Happy\\happy_2.gif",
+                    "assets\\images\\firefly\\Happy\\happy_3.gif",
+                    "assets\\images\\firefly\\Happy\\happy_4.png"
+                ]
+            },
+            {
+                "mood": "exceed",
+                "path": ["assets\\images\\firefly\\Happy\\exceed.gif"]
+            },
+            {
+                "mood": "bar",
+                "path": ["assets\\images\\firefly\\Happy\\bar.gif"]
+            },
+            {
+                "mood": "give",
+                "path": ["assets\\images\\firefly\\Happy\\give.gif"]
+            },
+            {
+                "mood": "large",
+                "path": ["assets\\images\\firefly\\Happy\\large.gif"]
+            },
+            {
+                "mood": "you",
+                "path": ["assets\\images\\firefly\\Happy\\you.gif"]
+            },
+            {
+                "mood": "feel",
+                "path": ["assets\\images\\firefly\\Happy\\feel.gif"]
+            },
+            {
+                "mood": "seek",
+                "path": ["assets\\images\\firefly\\Happy\\seek.gif"]
+            },
+            {
+                "mood": "see",
+                "path": ["assets\\images\\firefly\\Happy\\see.gif"]
+            },
+            {
+                "mood": "of",
+                "path": ["assets\\images\\firefly\\Happy\\of.gif"]
+            },
+            {
+                "mood": "sleep",
+                "path": ["assets\\images\\firefly\\Happy\\sleep.gif"]
+            },
+            {
+                "mood": "surprise",
+                "path": ["assets\\images\\firefly\\Happy\\surprise.gif"]
+            },
+            {
+                "mood": "stick",
+                "path": ["assets\\images\\firefly\\Happy\\stick.gif"]
+            }
+        ],
+        "Sadness": [
+            {
+                "mood": "grievance",
+                "path": ["assets\\images\\firefly\\Sadness\\grievance.gif"]
+            },
+            {
+                "mood": "abandoned",
+                "path": ["assets\\images\\firefly\\Sadness\\abandoned.gif"]
+            },
+            {
+                "mood": "no",
+                "path": ["assets\\images\\firefly\\Sadness\\no.gif"]
+            }
+        ],
+        "Angry": [
+            {
+                "mood": "angry",
+                "path": [
+                    "assets\\images\\firefly\\Angry\\angry.gif",
+                    "assets\\images\\firefly\\Angry\\angry_1.gif"
+                ]
+            },
+            {
+                "mood": "very_angry",
+                "path": ["assets\\images\\firefly\\Angry\\very_angry.gif"]
+            }
+        ],
+        "Love": [
+            {
+                "mood": "like_you",
+                "path": ["assets\\images\\firefly\\Love\\like_you.gif"]
+            },
+            {
+                "mood": "love",
+                "path": ["assets\\images\\firefly\\Love\\love.gif"]
+            },
+            {
+                "mood": "ok",
+                "path": ["assets\\images\\firefly\\Love\\ok.gif"]
+            }
+        ],
+        "Lovely": [
+            {
+                "mood": "lovely",
+                "path": ["assets\\images\\firefly\\Lovely\\lovely.png"]
+            },
+            {
+                "mood": "me",
+                "path": ["assets\\images\\firefly\\Lovely\\me.gif"]
+            },
+            {
+                "mood": "neow",
+                "path": ["assets\\images\\firefly\\Lovely\\neow.gif"]
+            },
+            {
+                "mood": "want",
+                "path": ["assets\\images\\firefly\\Lovely\\want.gif"]
+            },
+            {
+                "mood": "peeping",
+                "path": ["assets\\images\\firefly\\Lovely\\peeping.png"]
+            }
+        ],
+        "Lech" : [
+            {
+                "mood": "lech",
+                "path": ["assets\\images\\firefly\\Lech\\lech.gif"]
+            }
+        ]
+    }
+}

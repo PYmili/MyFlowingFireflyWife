@@ -1,10 +1,17 @@
+import os
 import sys
 import json
 import random
-import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QMenu, QAction
+
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import QObject, Qt, QTimer, QThread, pyqtSignal
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QLabel,
+    QMenu,
+    QAction
+)
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from loguru import logger
 
 from firefly import gpt, tts
@@ -13,12 +20,13 @@ from VoiceToText import (
     SoundRecording
 )
 
-INDEX_BG_IMAGE = "assets/images/firefly/main.gif"
+INDEX_BG_IMAGE = "assets/images/firefly/Lovely/peeping.png"
 
 
 class VoiceToTextThread(QThread):
     recognitionResultReady = pyqtSignal(str)
     def __init__(self, parent = None) -> None:
+        """STT 线程"""
         super().__init__(parent)
         self.ChatReusltText = ""
 
@@ -37,7 +45,7 @@ class VoiceToTextThread(QThread):
 
             chat.addMessage(result)
             chat.run()
-            self.recognitionResultReady.emit(self.ChatReusltText.split("</end>")[0])
+            self.recognitionResultReady.emit(self.ChatReusltText)
     
     def getChatReusltCallback(self, result_json: dict) -> None:
         """
@@ -53,6 +61,7 @@ class VoiceToTextThread(QThread):
 
 class TTSPlayThread(QThread):
     def __init__(self, text: str, label: QLabel, parent = None) -> None:
+        """TTS 线程"""
         super().__init__(parent)
         self.text = text
         self.label = label
@@ -63,8 +72,9 @@ class TTSPlayThread(QThread):
         self.label.close()
 
 
-class TransparentWindow(QMainWindow):
-    def __init__(self):
+class MainWindow(QMainWindow):
+    def __init__(self) -> None:
+        """主窗口"""
         super().__init__()
         self.FireFlyVoiceToText = VoiceToTextThread()
         self.FireFlyVoiceToText.recognitionResultReady.connect(self.show_message)
@@ -111,35 +121,39 @@ class TransparentWindow(QMainWindow):
             self.show_menu(event.globalPos())
 
     # 从 JSON 文件中随机选择并设置新的图片
-    def change_image(self):
-        with open("gif.json", "r") as f:
+    def change_image(self, mood: str = None):
+        with open("emoji_pack.json", "r") as f:
             data = json.load(f)
-            gif_list = data["gif"]
-            random_gif = random.choice(gif_list)
-            random_path = random.choice(random_gif["path"])
+            if mood is None:
+                mood = random.choice(list(data["moods"].keys()))
+
+            files = random.choice(data['moods'][mood])['path']
+            file_path = random.choice(files)
             
             # 检查文件是否存在
-            if os.path.exists(random_path) is False:
-                print("File does not exist:", random_path)
+            if os.path.exists(file_path) is False:
+                logger.error("File does not exist: "\
+                             f"path: {file_path}")
                 return None
             
             # 图片重复，将重新获取
-            if self.current_bg_image == random_path:
+            if self.current_bg_image == file_path:
                 self.change_image()
                 return None
+            
+            logger.info(f"mood: {mood}, file: {file_path}")
 
-            self.pixmap = QPixmap(random_path).scaledToWidth(250)
+            self.pixmap = QPixmap(file_path).scaledToWidth(250)
             self.label.setPixmap(self.pixmap)
             self.label.resize(self.pixmap.size())
             self.label.move(
                 (self.width() - self.label.width()) // 2,
                 (self.height() - self.label.height()) // 2
             )
-            self.current_bg_image = random_path
+            self.current_bg_image = file_path
                 
-
     # 创建并显示右键菜单
-    def show_menu(self, pos):
+    def show_menu(self, pos) -> None:
         menu = QMenu(self)
 
         # 自定义菜单样式表
@@ -169,7 +183,7 @@ class TransparentWindow(QMainWindow):
         menu.exec_(pos)
 
     # 显示消息提示
-    def show_message(self, text):
+    def show_message(self, text) -> None:
         # 设置消息显示框的初始位置
         message_label = QLabel(self)
         message_label.setStyleSheet("""
@@ -182,14 +196,19 @@ class TransparentWindow(QMainWindow):
         """)
         message_label.adjustSize()
         message_label.move(100, 90)
+        
+        split_text = text.split("</end>")
+
+        # 变换表情
+        self.change_image(mood=split_text[1])
 
         # 显示文本和tts
-        self.tts_play = TTSPlayThread(text, message_label)
+        self.tts_play = TTSPlayThread(split_text[0], message_label)
         self.tts_play.start()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = TransparentWindow()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())
