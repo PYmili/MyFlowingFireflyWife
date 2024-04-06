@@ -2,9 +2,11 @@ import os
 import json
 import wave
 import base64
+from typing import *
 
 import pyaudio
 import requests
+from funasr import AutoModel
 from loguru import logger
 
 BAIDUYUN_API = "https://openapi.baidu.com/oauth/2.0/token?grant_type=client_credentials&client_id="
@@ -62,7 +64,7 @@ class BaiduYun_STT:
             _rate: str = '16000',
             _channel: int = 1,
             _cuid: str = '*******'
-    ) -> str:
+    ) -> Union[str, None]:
         """
         将音频数据传输到百度云API接口，再获取到API识别到的文本信息。
         :param _SpeechData: bytes
@@ -85,7 +87,6 @@ class BaiduYun_STT:
             'token': self.getToken(),
             'dev_pid': _dev_pid
         }
-        logger.info("执行STT中...")
         with requests.post(
             'http://vop.baidu.com/server_api',
             json=__data,
@@ -97,6 +98,41 @@ class BaiduYun_STT:
             else:
                 post.close()
                 return None
+            
+
+class Funasr_STT:
+    def __init__(self) -> None:
+        try:
+            self.model = AutoModel(
+                model="paraformer-zh", model_revision="v2.0.4",
+                vad_model="fsmn-vad", vad_model_revision="v2.0.4",
+                punc_model="ct-punc-c", punc_model_revision="v2.0.4",
+                # spk_model="cam++", spk_model_revision="v2.0.2",
+            )
+        except Exception as e:
+            logger.error(f"Funasr TTS 初始化失败！：{e}")
+            raise Exception("Funasr TTS 初始化失败！")
+        
+    def SpeechToText(self, _SpeechData: bytes) -> Union[str, None]:
+        """
+        TTS
+        :return Union[str, None]
+        """
+        if not self.model:
+            return None
+        
+        funasr_cache_file = os.path.join(os.getcwd(), "funasr_cache.wav")
+        with open(funasr_cache_file, "wb") as wfp:
+            wfp.write(_SpeechData)
+        
+        result = self.model.generate(
+            input=funasr_cache_file, 
+            batch_size_s=300, 
+            hotword='魔搭'
+        )
+        if not result:
+            return None
+        return result[0].get("text")
 
 
 def SoundRecording(

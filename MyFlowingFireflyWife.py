@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import random
+from typing import *
 
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
@@ -17,27 +18,66 @@ from loguru import logger
 from firefly import gpt, tts
 from VoiceToText import (
     BaiduYun_STT,
+    Funasr_STT,
     SoundRecording
 )
 
 INDEX_BG_IMAGE = "assets/images/firefly/Lovely/peeping.png"
 
 
+def readConfig() -> dict:
+    """
+    读取config.json文件的数据
+    :return dict
+    """
+    configJsonDir = os.path.join(os.getcwd(), "config.json")
+    if os.path.isfile(configJsonDir) is False:
+        with open(configJsonDir, "w+",encoding="utf-8") as fp:
+            fp.write(json.dumps({
+                "tts": "funasr"
+            }))
+        return {}
+    with open(configJsonDir, "r", encoding="utf-8") as fp:
+        __data = fp.read()
+        if not __data:
+            return {}
+
+    return json.loads(__data)
+
+
+def loadingSTT() -> Any:
+    """
+    对TTS进行加载。
+    :return TTS_OBJECT
+    """
+    configData = readConfig()
+    logger.info(f"read Config File: {configData}")
+    stt = BaiduYun_STT()
+    if configData.get('stt') == 'funasr':
+        stt = Funasr_STT()
+    else:
+        stt = BaiduYun_STT()
+
+    return stt
+
+
 class VoiceToTextThread(QThread):
     recognitionResultReady = pyqtSignal(str)
-    def __init__(self, parent = None) -> None:
+    def __init__(self, stt: Any) -> None:
         """STT 线程"""
-        super().__init__(parent)
+        super().__init__()
+        self.tts = stt
         self.ChatReusltText = ""
 
     def run(self) -> None:
-        api = BaiduYun_STT()
         chat = gpt.Chat(self.getChatReusltCallback)
         while True:
             audio_bytes = SoundRecording()
             if not audio_bytes:
                 continue
-            result = api.SpeechToText(
+            
+            logger.info("start STT.")
+            result = self.tts.SpeechToText(
                 audio_bytes
             )
             if not result:
@@ -59,24 +99,33 @@ class VoiceToTextThread(QThread):
         self.ChatReusltText = result_json['content']
 
 
-class TTSPlayThread(QThread):
-    def __init__(self, text: str, label: QLabel, parent = None) -> None:
-        """TTS 线程"""
-        super().__init__(parent)
+class TTSthread(QThread):
+    ttsFinished = pyqtSignal(bool)
+
+    def __init__(self, text: str, label: QLabel) -> None:
+        super().__init__()
         self.text = text
         self.label = label
-    
+
     def run(self) -> None:
-        # 设置消息框的自动换行功能
-        tts.FireFlyTTS(self.text).play(self.label)
-        self.label.close()
+        try:
+            result = tts.FireFlyTTS(self.text).play(self.label)
+            logger.info(f"TTS 结果: {result}")
+            self.label.close()
+            if not result:
+                self.ttsFinished.emit(False)
+            else:
+                self.ttsFinished.emit(True)
+        except Exception as e:
+            logger.error(f"TTS 错误: {e}")
+            self.ttsFinished.emit(False)
 
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         """主窗口"""
         super().__init__()
-        self.FireFlyVoiceToText = VoiceToTextThread()
+        self.FireFlyVoiceToText = VoiceToTextThread(stt=loadingSTT())
         self.FireFlyVoiceToText.recognitionResultReady.connect(self.show_message)
         self.FireFlyVoiceToText.start()
         self.current_bg_image = INDEX_BG_IMAGE
@@ -197,17 +246,26 @@ class MainWindow(QMainWindow):
         message_label.adjustSize()
         message_label.move(100, 90)
         
-        split_text = text.split("</end>")
-
-        # 变换表情
-        self.change_image(mood=split_text[1])
+        self.split_text = text.split("</end>")
 
         # 显示文本和tts
-        self.tts_play = TTSPlayThread(split_text[0], message_label)
+        self.tts_play = TTSthread(self.split_text[0], message_label)
+        self.tts_play.ttsFinished.connect(self.on_tts_finished)
         self.tts_play.start()
+
+    def on_tts_finished(self, success: bool) -> None:
+        if not success:
+            logger.error("TTS 播放失败。")
+            return None
+        
+        logger.info("TTS 播放成功。")
+        # 变换表情
+        if self.split_text:
+            self.change_image(mood=self.split_text[1])
 
 
 if __name__ == '__main__':
+    # gui init
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

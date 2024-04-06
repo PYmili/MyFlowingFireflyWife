@@ -1,9 +1,11 @@
 import os
+import wave
 import subprocess
 from typing import Union
 
 from PyQt5.QtWidgets import QLabel
 import requests
+import pyaudio
 from loguru import logger
 
 GENSHINVOICE_API = "https://bv2.firefly.matce.cn"
@@ -46,11 +48,12 @@ class FireFlyTTS:
         }
         self.content = content
 
-    def play(self, label: QLabel) -> Union[str, None]:
+    def play(self, label: QLabel = None) -> Union[str, None]:
         """
         运行
         :return Union[str, None]
         """
+        logger.info("TTS Playing.")
         with requests.post(GENSHINVOICE_API + "/run/predict", headers=HEADERS, json=self.post_data) as response:
             if response.status_code == 200:
                 if response.json()['data'][0] != 'Success':
@@ -66,19 +69,54 @@ class FireFlyTTS:
         tts_wav = GENSHINVOICE_API + "/file=" + tmp_wav
         with requests.get(tts_wav, headers=HEADERS) as response:
             if response.status_code == 200:
+                # 使用 pydub 加载音频数据
                 with open("result_audio.wav", "wb+") as wfp:
                     wfp.write(response.content)
             else:
+                logger.error(f"下载TTS: 生成音频错误。URL:{tts_wav}")
                 return None
         
         # 为了同步消息与播放音频，将在此设置QLabel文本
-        label.setWordWrap(True)
-        label.setText(self.content)
-        label.adjustSize()
-        label.show()
-        FFplayPlay(os.path.join(os.getcwd(), "result_audio.wav")).play()
+        if label:
+            label.setWordWrap(True)
+            label.setText(self.content)
+            label.adjustSize()
+            label.show()
+        WavPlayer(os.path.join(os.getcwd(), "result_audio.wav")).play()
+        # FFplayPlay(tts_wav).play()
 
         return tts_wav
+
+
+class WavPlayer:
+    def __init__(self, wav_file: str) -> None:
+        self.wav_file_fp = wave.open(wav_file, 'rb')  # 打开WAV文件
+        # 获取WAV文件的参数
+        self.channels = self.wav_file_fp.getnchannels()  # 获取声道数
+        self.sample_width = self.wav_file_fp.getsampwidth()  # 获取样本宽度（字节）
+        self.framerate = self.wav_file_fp.getframerate()  # 获取采样率（Hz）
+        self.frames = self.wav_file_fp.getnframes()  # 获取总帧数
+
+        self.pyaudioObject = pyaudio.PyAudio()  # 创建PyAudio对象
+
+    def play(self) -> None:
+        stream = self.pyaudioObject.open(
+            format=self.pyaudioObject.get_format_from_width(self.sample_width),  # 获取与样本宽度对应的PyAudio格式
+            channels=self.channels,  # 设置声道数
+            rate=self.framerate,  # 设置采样率
+            output=True  # 指定为输出流（播放）
+        )
+
+        # 循环读取WAV数据并写入流
+        data = self.wav_file_fp.readframes(4096)  # 一次读取1024帧（可根据需要调整）
+        while data:  # 当还有数据未读完时
+            stream.write(data)  # 将数据写入音频流
+            data = self.wav_file_fp.readframes(4096)  # 继续读取下一组1024帧
+
+        # 关闭流和PyAudio对象
+        stream.stop_stream()  # 停止音频流
+        stream.close()  # 关闭音频流
+        self.pyaudioObject.terminate()  # 关闭PyAudio对象
 
 
 class FFplayPlay:
@@ -109,3 +147,7 @@ class FFplayPlay:
 
         # 等待ffplay进程结束（由于指定了-autoexit，它会在播放完毕后自动退出）
         process.wait()
+
+
+# WavPlayer(os.path.join(os.getcwd(), "result_audio.wav")).play()
+# FireFlyTTS("我是流萤").play()

@@ -6,7 +6,7 @@ MyFlowingFireflyWife 是一个使用 Python 开发的桌面宠物应用，灵感
 
 ### 注意事项
 
-1. **阿里云 API 申请**
+1. **阿里云 API 申请**（非必须）
 
    为了使用 MyFlowingFireflyWife 应用的全部功能，您需要前往阿里云申请相应的 API。您可以点击[此链接](https://help.aliyun.com/zh/dashscope/developer-reference/tongyi-qianwen-7b-14b-72b-quick-start)获取详细的申请步骤和文档。
 
