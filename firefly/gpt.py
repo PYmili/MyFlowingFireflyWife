@@ -8,25 +8,9 @@ from http import HTTPStatus
 import dashscope
 from dashscope import Generation
 from dashscope.api_entities.dashscope_response import Role
-
 from loguru import logger
 
-configFilePath = os.path.join(
-    os.path.split(__file__)[0],
-    "configuration.json"
-)
-
-
-if os.path.isfile(configFilePath) is False:
-    with open(configFilePath, "w+", encoding="utf-8") as wfp:
-        wfp.write(json.dumps({
-            "QWen_API_KEY": ""
-        }, indent=4))
-else:
-    with open(configFilePath, "r", encoding="utf-8") as rfp:
-        QWen_API_KEY = json.loads(rfp.read())['QWen_API_KEY']
-        if QWen_API_KEY:
-            dashscope.api_key = QWen_API_KEY
+from .configuration import Configuration
 
 
 class Chat:
@@ -44,6 +28,11 @@ class Chat:
         """
         self.ChatCallback = callback
         self.send = random.randint(1, 10000)
+
+        # 读取配置文件
+        self.configuration = Configuration()
+        self.configuration.read()
+        dashscope.api_key = self.configuration.QWen_API_KEY
 
         self.messageJsonFile = messagesJsonFile
         # 读取messages缓存

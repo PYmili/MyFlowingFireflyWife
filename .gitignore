@@ -165,5 +165,9 @@ stt_config.json
 .configuration.json
 configuration.json
 
-# cache
-cache.json
+# cache .wav file.
+funasr_cache.wav
+result_audio.wav
+
+# test dir.
+test/
