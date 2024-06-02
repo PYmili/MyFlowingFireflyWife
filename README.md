@@ -1,4 +1,4 @@
-# MyFlowingFireflyWife (因TTS原因，暂时不可使用)
+# MyFlowingFireflyWife
 
 ## 项目简介
 
@@ -6,11 +6,22 @@ MyFlowingFireflyWife 是一个使用 Python 开发的桌面宠物应用，灵感
 
 ### 注意事项
 
-1. **阿里云 API 申请**（非必须）
+1. **使用魔撘的Liuying-GPT-Sovits项目**
+
+   使用Liuying-GPT-Sovits项目的tts功能，将生成流萤语音，需在魔撘创建用户，并填写配置文件**firefly/configuration.json**。
+   ```json
+   {
+      "QWen_API_KEY": "阿里云api",
+      "sessionHash": "魔撘",
+      "studioToken": "魔撘"
+   }
+   ```
+
+2. **阿里云 API 申请**（非必须）
 
    为了使用 MyFlowingFireflyWife 应用的全部功能，您需要前往阿里云申请相应的 API。您可以点击[此链接](https://help.aliyun.com/zh/dashscope/developer-reference/tongyi-qianwen-7b-14b-72b-quick-start)获取详细的申请步骤和文档。
 
-2. **百度云短语音识别 API 申请**
+3. **百度云短语音识别 API 申请**
 
    为了实现 MyFlowingFireflyWife 应用中的语音识别功能，您需要申请百度云的短语音识别 API。您可以点击[此链接](https://cloud.baidu.com/product/speech/realtime_asr)了解如何申请并获取更多信息。
 
