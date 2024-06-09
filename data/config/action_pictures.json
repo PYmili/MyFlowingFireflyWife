@@ -1,0 +1,17 @@
+{
+    "eat": {
+        "path": "data\\assets\\images\\firefly\\eat",
+        "type": ".png",
+        "number": 19
+    },
+    "Standby": {
+        "path": "data\\assets\\images\\firefly\\Standby",
+        "type": ".png",
+        "number": 35
+    },
+    "mention": {
+        "path": "data\\assets\\images\\firefly\\mention",
+        "type": ".png",
+        "number": 19
+    }
+}

@@ -1,2 +1,0 @@
-from .configuration import Configuration
-from .liuying_gpt_sovits import LiuYingGPTSovitesModelScope
