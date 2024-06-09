@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Union
+from typing import Any
 
 import requests
 from loguru import logger
@@ -11,30 +11,18 @@ from ..firefly import (
     gpt,
     tts
 )
-from .VoiceToText import (
-    BaiduYun_STT,
-    Funasr_STT,
-    SoundRecording
-)
+from .VoiceToText import SoundRecording
 from .sttConfigManager import sttConfig
 
 CURRNT_DIR = os.getcwd()
-
-
-def loadingSTT() -> Union[BaiduYun_STT, Funasr_STT]:
-    """
-    对STT配置进行加载。
-    :return STT_OBJECT
-    """
-    sttData = sttConfig().read("stt")
-    logger.info(f"read Config File: {sttData}")
-    stt = BaiduYun_STT()
-    if sttData == 'funasr':
-        stt = Funasr_STT()
-    else:
-        stt = BaiduYun_STT()
-
-    return stt
+STT_NAME = sttConfig().read("stt")
+logger.info(f"read Config File: {STT_NAME}")
+if STT_NAME == 'funasr':
+    from .VoiceToText import Funasr_STT
+    STT = Funasr_STT()
+else:
+    from .VoiceToText import BaiduYun_STT
+    STT = BaiduYun_STT()
 
 
 class TTS:
@@ -64,15 +52,14 @@ class TTS:
 
 class sttQThread(QThread):
     recognitionResultReady = pyqtSignal(str)
-    def __init__(self, stt_func: loadingSTT, message_label: QLabel) -> None:
+    def __init__(self, message_label: QLabel) -> None:
         """
         STT 线程
-        :param stt_func: function 需要使用的stt方法
         :param message_label: QLabel 用于更新主界面表情
         :return None
         """
         super().__init__()
-        self.stt = stt_func
+        self.stt = STT
         self.message_label = message_label
         self.ChatReusltText = ""
 
