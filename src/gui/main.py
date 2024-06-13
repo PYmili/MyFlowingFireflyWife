@@ -13,9 +13,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QTimer, QRect, pyqtSignal
 
+from .setting import SettingsWidget
 from src.events import ActionEvent
-from src.gui import loading
-from src.methods.threads import sttQThread
 
 INDEX_BG_IMAGE = "data/assets/images/firefly/default/bg.png"
 
@@ -28,8 +27,7 @@ class MainWindow(QMainWindow):
         """主窗口"""
         super().__init__()
         self.currentBgImage = INDEX_BG_IMAGE
-        self.isStartSTT = False
-        self.scaledToWidthSize = 512
+        self.scaledToWidthSize = 0
 
         # 初始化action event
         self.actionEventQThread = ActionEvent(self.switchBackground)
@@ -44,11 +42,11 @@ class MainWindow(QMainWindow):
 
         # 加载并显示指定图片，并缩小一倍
         self.label = QLabel(self)
-        if self.currentBgImage:
+        if self.scaledToWidthSize > 0:
             self.pixmap = QPixmap(self.currentBgImage).scaledToWidth(self.scaledToWidthSize)
-            self.label.setPixmap(self.pixmap)
         else:
-            self.pixmap = None
+            self.pixmap = QPixmap(self.currentBgImage)
+        self.switchBackground(self.currentBgImage)
 
         # 设置 QLabel 的大小
         self.label.resize(self.pixmap.size())
@@ -58,6 +56,8 @@ class MainWindow(QMainWindow):
             (self.width() - self.label.width()) // 2,
             (self.height() - self.label.height()) // 2
         )
+
+        self.resize(self.pixmap.size())
 
         # 信息label
         self.messageQLabel = QLabel(self)
@@ -89,10 +89,14 @@ class MainWindow(QMainWindow):
             }
         """)
 
+        # 创建设置界面
+        self.settingsWidget = SettingsWidget()
+        self.settingsWidget.hide()
+
         # 添加菜单项
-        # 设置界面
+        # 设置
         config_action = QAction("设置", self)
-        # config_action.triggered.connect()
+        config_action.triggered.connect(self.settingsWidget.show)
         self.menu.addAction(config_action)
 
         # 喂食
@@ -110,15 +114,6 @@ class MainWindow(QMainWindow):
         exit_action.triggered.connect(self.close)
         self.menu.addAction(exit_action)
         self.menu.hide()
-        
-        self.setGeometry(
-            100, 100,
-            self.scaledToWidthSize, self.scaledToWidthSize
-        )
-
-        # 启动stt线程
-        if self.isStartSTT:
-            self.startSTTQthread()
 
     def mouseMoveEvent(self, event) -> None:
         """
@@ -178,6 +173,8 @@ class MainWindow(QMainWindow):
         if self.actionEventQThread:
             self.actionEventQThread.requestInterruption = True
             self.actionEventQThread.wait()
+        if self.settingsWidget:
+            self.settingsWidget.close()
         super().close()
 
     def changeImage(self, mood: str = None) -> None:
@@ -218,13 +215,17 @@ class MainWindow(QMainWindow):
         :param filePath: str 文件路径
         :return None
         """
-        self.pixmap = QPixmap(filePath).scaledToWidth(self.scaledToWidthSize)
+        if self.scaledToWidthSize > 0:
+            self.pixmap = QPixmap(filePath).scaledToWidth(self.scaledToWidthSize)
+        else:
+            self.pixmap = QPixmap(filePath)
         self.label.setPixmap(self.pixmap)
         self.label.resize(self.pixmap.size())
         self.label.move(
             (self.width() - self.label.width()) // 2,
             (self.height() - self.label.height()) // 2
         )
+        self.resize(self.pixmap.size())
         self.currentBgImage = filePath
             
     def showMenu(self, pos: tuple) -> None:
@@ -258,13 +259,6 @@ class MainWindow(QMainWindow):
             self.messageQLabel.hide()
             self.timer.stop()
 
-    def startSTTQthread(self) -> None:
-        """启动stt线程"""
-        if self.isStartSTT is True:
-            self.FireflysttQThread = sttQThread(self.messageQLabel)
-            self.FireflysttQThread.recognitionResultReady.connect(self.showMessage)
-            self.FireflysttQThread.start()
-
     def ActionEventMethod(self, result: bool) -> None:
         """
         动作事件的返回方法
@@ -281,7 +275,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'action_timer'):
             self.action_timer = QTimer(self)
             self.action_timer.timeout.connect(self.actionEventQThread.playNextImage)
-        self.action_timer.start()
+        self.action_timer.start(250)
 
     def stopTimer(self) -> None:
         """停止执行动作的定时器"""
