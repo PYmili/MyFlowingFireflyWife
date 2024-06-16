@@ -1,6 +1,6 @@
 import os
 
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QMainWindow, QLabel, QProgressBar
 

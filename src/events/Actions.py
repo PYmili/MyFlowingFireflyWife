@@ -1,8 +1,7 @@
 import os
 import json
-import time
 from typing import Any
-from PyQt5.QtCore import pyqtSignal, QThread, QTimer
+from PyQt5.QtCore import pyqtSignal, QThread
 from loguru import logger
 
 
@@ -48,13 +47,15 @@ actionAllPicData = {
     "discomfort": actionPic.read("discomfort"),
     # 非持续动作
     "eat": actionPic.read("eat"),
-    "love": actionPic.read("love")
+    "love": actionPic.read("love"),
+    "left": actionPic.read("left"),
+    "right": actionPic.read("right")
 }
 
 
 class ActionEvent(QThread):
     """动作事件"""
-    result = pyqtSignal(bool)
+    result = pyqtSignal(str)
     start_timer_signal = pyqtSignal()
     stop_timer_signal = pyqtSignal()
 
@@ -69,8 +70,6 @@ class ActionEvent(QThread):
         self.requestInterruption = False
         self.sign = "Standby"
         self.actionEventPicList = actionAllPicData[self.sign]
-        # 角色属性
-        self.moodValue = 100    # 心情值
 
     def run(self) -> None:
         """运行"""
@@ -85,7 +84,7 @@ class ActionEvent(QThread):
         # 查看当前列表中内容是否已删除完毕，代表着当前动作已结束。
         if not self.actionEventPicList:
             actionAllPicData[self.sign] = actionPic.read(self.sign) # 重新读取数据
-            self.result.emit(True)
+            self.result.emit(self.sign)
             return None
         
         # 删除第一个元素，并记录下来
@@ -94,6 +93,8 @@ class ActionEvent(QThread):
         if self.sign not in actionAllPicDataKeys[-2:]:
             # 将删除的元素再次添加到列表末尾，到达循环目的。
             self.actionEventPicList.append(next_image)
+        if self.sign in ['left', 'right']:
+            self.result.emit(self.sign)
 
     def load(self, key: str) -> None:
         """
@@ -103,36 +104,35 @@ class ActionEvent(QThread):
         """
         self.sign = key
         self.actionEventPicList = actionAllPicData[self.sign]
-        logger.info(f"Action: {key}, Mood value: {self.moodValue}")
 
     def mentionEvent(self) -> None:
         """提起"""
         self.load("mention")
-        self.moodValue -= 10
 
     def standbyEvent(self) -> None:
         """待机"""
-        if self.moodValue < 0:
-            self.discomfortEvent()
-            return None
         self.load("Standby")
-        self.moodValue -= 1
 
     def eatEvent(self) -> None:
         """吃"""
         self.load("eat")
-        self.moodValue += 10
 
     def sleepEvent(self) -> None:
         """睡觉"""
         self.load("sleep")
-        self.moodValue += 20
 
     def loveEvent(self) -> None:
         """ღ( ´･ᴗ･` )比心"""
         self.load("love")
-        self.moodValue += 5
 
     def discomfortEvent(self) -> None:
         """不适"""
         self.load("discomfort")
+
+    def left(self) -> None:
+        """向左"""
+        self.load("left")
+    
+    def right(self) -> None:
+        """向右"""
+        self.load("right")

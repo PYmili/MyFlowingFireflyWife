@@ -1,6 +1,6 @@
 from typing import List, Any, Dict, Union
 
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -11,26 +11,41 @@ from PyQt5.QtWidgets import (
     QListWidgetItem
 )
 
-from src import plus
+from plugins import plugin
 
 
-class PlusSettingWindow(QWidget):
+class StartPluginThread(QThread):
+    result = pyqtSignal(bool)
+    def __init__(self, _callback: callable) -> None:
+        """使用线程启动Plugin"""
+        super().__init__()
+        self.__callback = _callback
+
+    def run(self) -> None:
+        self.__callback()
+        self.result.emit(True)
+
+
+class pluginSettingWindow(QWidget):
     def __init__(self, parent=None) -> None:
-        """plus的设置界面"""
+        """plugin的设置界面"""
         super().__init__(parent)
         layout = QHBoxLayout(self)
         self.setLayout(layout)
 
-        # plus的列表
-        self.plusItems: List[Dict[Any, plus.plusDataType]] = []
-        self.getPlusItems()
-        self.plusCallback: Union[QThread, None] = None
+        # plugin的列表
+        self.loader: Union[plugin.pluginLoader, None] = None
+        self.pluginItems: List[Dict[Any, plugin.pluginDataType]] = []
+        self.getpluginItems()
+        self._callback: Union[plugin.pluginCallableType, None] = None
+        self.pluginThread: Union[QThread, None] = None
+        self.startPluginThread: Union[StartPluginThread, None] = None
         
         # 左侧列表
-        self.plusList = QListWidget()
-        self.plusList.itemClicked.connect(self.displayPlusDetails)
-        self.populatePlusList()
-        layout.addWidget(self.plusList, 20)  # 分配左侧20%的空间
+        self.pluginList = QListWidget()
+        self.pluginList.itemClicked.connect(self.displaypluginDetails)
+        self.populatepluginList()
+        layout.addWidget(self.pluginList, 20)  # 分配左侧20%的空间
         
         # 右侧详情显示区
         self.detailsFrame = QWidget()
@@ -39,68 +54,73 @@ class PlusSettingWindow(QWidget):
         self.detailsLayout.addWidget(self.detailsLabel)
         layout.addWidget(self.detailsFrame, 80)  # 分配右侧80%的空间
     
-    def getPlusItems(self):
-        """获取所有plusItems"""
-        manager = plus.plusConfigManager()
-        result = manager.readDataByPlusName()
+    def getpluginItems(self):
+        """获取所有pluginItems"""
+        manager = plugin.pluginConfigManager()
+        result = manager.readDataBypluginName()
         if result:
-           self.plusItems = result 
+           self.pluginItems = result 
     
-    def populatePlusList(self):
-        """填充plus列表"""
-        for plusItem in self.plusItems:
-            for name in plusItem.keys():
+    def populatepluginList(self):
+        """填充plugin列表"""
+        for pluginItem in self.pluginItems:
+            for name in pluginItem.keys():
                 listItem = QListWidgetItem(name)
-                self.plusList.addItem(listItem)
+                self.pluginList.addItem(listItem)
 
-    def displayPlusDetails(self, item):
-        """显示选中plus的详细信息"""
-        for plusItem in self.plusItems:
-            if item.text() not in plusItem.keys():
+    def displaypluginDetails(self, item):
+        """显示选中plugin的详细信息"""
+        for pluginItem in self.pluginItems:
+            if item.text() not in pluginItem.keys():
                 break
-            value = plusItem[item.text()]
+            value = pluginItem[item.text()]
             static = "启用" if value.static == "off" else "关闭"
+            self.startPluginThread = StartPluginThread(lambda: self.enableOrDisablepluginEvent(item.text()))
             self.updateDetails(value)
             self.onOrOffButton = QPushButton(static)
-            self.onOrOffButton.clicked.connect(lambda: self.enableOrDisablePlusEvent(item.text()))
+            self.onOrOffButton.clicked.connect(self.startPluginThread.start)
             self.detailsLayout.addWidget(self.onOrOffButton)
 
-    def enableOrDisablePlusEvent(self, plusName: str) -> None:
-        """启用指定的plus"""
-        # 使用加载器加载plus
-        loader = plus.plusLoader("src.plus." + plusName)
+    def enableOrDisablepluginEvent(self, pluginName: str) -> None:
+        """启用指定的plugin"""
+        # 使用加载器加载plugin
+        self.loader = plugin.pluginLoader(pluginName)
 
-        # 关闭plus
+        # 关闭plugin
         if self.onOrOffButton.text() == "关闭":
-            if self.plusCallback:
-                self.plusCallback.requestInterruption = True
-                self.plusCallback.wait()
+            if not self._callback:
+                return None
+            if self.loader.getStaitc() is False:
+                return None
+            result = self._callback.stop(self.pluginThread)
+            if not result:
+                return None
             self.onOrOffButton.setText("启动")
-            loader.off()
-            loader.save()
+            self.loader.off()
+            self.loader.save()
             return None
         
-        # 启用plus
-        _callback: plus.PlusCallableType = loader.on()
-        if not _callback:
+        # 启用plugin
+        self._callback: plugin.pluginCallableType = self.loader.on()
+        if not self._callback:
             return None
-        _callback = _callback() # 将加载后的模块进行启动
-        if _callback is not None:
-            self.plusCallback: QThread = _callback.run()()
-            self.plusCallback.start()
-        self.onOrOffButton.setText("关闭")
-        loader.save()
+        self._callback = self._callback() # 将加载后的模块进行启动
+        if self._callback is not None:
+            self.pluginThread: QThread = self._callback.run()()
+            self.pluginThread.start()
+            self.onOrOffButton.setText("关闭")
+            self.loader.save()
 
-    def updateDetails(self, plusData: plus.plusDataType):
+    def updateDetails(self, pluginData: plugin.pluginDataType):
         """更新右侧的详细信息显示"""
-        static = "启动" if plusData.static == "on" else "关闭"
+        static = "启动" if pluginData.static == "on" else "关闭"
         address = "\n\t".join(
-            [key+':'+value for key, value in plusData.address.items() if value != "null"]
+            [key+':'+value for key, value in pluginData.address.items() if value != "null"]
         )
         self.detailsLabel.setText(
-            f"作者: {plusData.author}\n" +
-            f"版本: {plusData.version}\n"+
-            f"简介: {plusData.description}\n" +
+            f"作者: {pluginData.author}\n" +
+            f"版本: {pluginData.version}\n"+
+            f"简介: {pluginData.description}\n" +
             f"当前状态: {static}\n" + 
             f"开源地址: \n\t{address}" 
         )
@@ -119,6 +139,4 @@ class SettingsWidget(QWidget):
         
         # 选项菜单
         tabWidget.addTab(QWidget(), "基础")
-        tabWidget.addTab(PlusSettingWindow(), "plus")
-        
-        
+        tabWidget.addTab(pluginSettingWindow(), "plugin")

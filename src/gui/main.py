@@ -12,9 +12,13 @@ from PyQt5.QtWidgets import (
     QAction
 )
 from PyQt5.QtCore import Qt, QTimer, QRect, pyqtSignal
+from PyQt5.QtWidgets import QApplication
 
 from .setting import SettingsWidget
 from src.events import ActionEvent
+from src.gui.window import InfoWindow, DEF_IMG
+from src.FireflyVoicePack.main import FireflyVoicePackQThread
+from src.events.RoleProperties import Firefly as FireflyRole
 
 INDEX_BG_IMAGE = "data/assets/images/firefly/default/bg.png"
 
@@ -28,6 +32,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.currentBgImage = INDEX_BG_IMAGE
         self.scaledToWidthSize = 0
+        self.fireflyVoicePackThread = None
+        self.fireflyRoleObject = FireflyRole()
+        self.isFreeWalking = False
+        self.walkingDirection = "left"
 
         # 初始化action event
         self.actionEventQThread = ActionEvent(self.switchBackground)
@@ -99,6 +107,11 @@ class MainWindow(QMainWindow):
         config_action.triggered.connect(self.settingsWidget.show)
         self.menu.addAction(config_action)
 
+        # 自由行走
+        freeWalkingQAction = QAction("游动", self)
+        freeWalkingQAction.triggered.connect(self.setFreeWalking)
+        self.menu.addAction(freeWalkingQAction)
+
         # 喂食
         feeding = QAction("喂食", self)
         feeding.triggered.connect(self.actionEventQThread.eatEvent)
@@ -111,7 +124,7 @@ class MainWindow(QMainWindow):
 
         # 退出程序
         exit_action = QAction("退出", self)
-        exit_action.triggered.connect(self.close)
+        exit_action.triggered.connect(self.CustomCloseEvent)
         self.menu.addAction(exit_action)
         self.menu.hide()
 
@@ -133,20 +146,13 @@ class MainWindow(QMainWindow):
         if event.button() == Qt.LeftButton:
             self.drag_pos = event.globalPos()
             event.accept()
-            # 新增摸头事件判断逻辑
-            click_x = event.x()
-            click_y = event.y()
-            # 界面上半部分中心区域为摸头触发区
-            trigger_width = int(self.width() / 2)  # 触发区宽度占窗口一半
-            trigger_height = int(self.height() / 4)  # 触发区高度占窗口四分之一，位于上半部
-            trigger_area = QRect(
-                trigger_height - trigger_width // 2,
-                0, trigger_width, trigger_height
-            )
-            
+            # 界面上半部分为摸头触发区
+            trigger_height = self.height() // 2  # 触发区高度占窗口一半
+            trigger_area = QRect(0, 0, self.width(), trigger_height)
+
+            # 检查点击是否在摸头触发区域内
             if trigger_area.contains(event.pos()):
-                # 用户点击了摸头触发区，执行摸头事件
-                self.actionEventQThread.loveEvent()
+                self.actionEventQThread.loveEvent()  # 执行摸头动作
             else:
                 # 切换提起动作
                 self.actionEventQThread.mentionEvent()
@@ -163,19 +169,39 @@ class MainWindow(QMainWindow):
             event.accept()
             # 释放mention action, 重启 standbyAction
             self.actionEventQThread.standbyEvent()
+            self.isFreeWalking = False
 
-    def close(self, event) -> None:
-        """
-        重写close
-        :return None
-        """
+    def CustomCloseEvent(self, event) -> None:
+        """编写close窗口的自定义事件"""
+        self.playFireflyVoice("VoiceOnClose")
+        self.fireflyVoicePackThread.finished.connect(self.close)
+
+    def closeEvent(self, event) -> None:
+        """重写closeEvent"""
         # 判断当前action是否存在，进行释放
         if self.actionEventQThread:
             self.actionEventQThread.requestInterruption = True
             self.actionEventQThread.wait()
+        # 判断设置窗口存在，存在则关闭
         if self.settingsWidget:
             self.settingsWidget.close()
-        super().close()
+        super().closeEvent(event)
+    
+    def showEvent(self, event) -> None:
+        self.playFireflyVoice("VoiceOnStart")
+        super().showEvent(event)
+
+    def playFireflyVoice(self, key: str) -> None:
+        self.fireflyVoicePackThread = FireflyVoicePackQThread(key)
+        self.fireflyVoicePackThread.started.connect(self.VoicePackStartedCallback)
+        self.fireflyVoicePackThread.start()
+
+    def VoicePackStartedCallback(self, result: dict) -> None:
+        self.infoWindow = InfoWindow(
+            result['title'],
+            result.get('img') if result.get('img') else DEF_IMG
+        )
+        self.infoWindow.show()
 
     def changeImage(self, mood: str = None) -> None:
         """
@@ -259,7 +285,7 @@ class MainWindow(QMainWindow):
             self.messageQLabel.hide()
             self.timer.stop()
 
-    def ActionEventMethod(self, result: bool) -> None:
+    def ActionEventMethod(self, result: str) -> None:
         """
         动作事件的返回方法
         :param result: bool 判断是否正常结束
@@ -267,15 +293,49 @@ class MainWindow(QMainWindow):
         """
         if not result:
             return None
-        if self.actionEventQThread.sign != "Standby":
+        if result != "Standby" and self.isFreeWalking is False:
             self.actionEventQThread.standbyEvent()
+
+        if self.isFreeWalking is True:
+            self.actionEventQThread.load(self.walkingDirection)
+            if self.walkingDirection == "left":
+                self.moveLeft()
+            elif self.walkingDirection == "right":
+                self.moveRight()
+            # 检查是否到达屏幕边缘并改变方向
+            if self.isFreeWalking:
+                screen_geometry = QApplication.desktop().screenGeometry()
+                if (self.walkingDirection == "left" and self.x() <= screen_geometry.x()) or \
+                   (self.walkingDirection == "right" and self.x() + self.width() >= screen_geometry.right()):
+                    self.walkingDirection = "right" if self.walkingDirection == "left" else "left"
+                    logger.info(f"Reached screen edge, turning to {self.walkingDirection}")
+            
+    def setFreeWalking(self) -> None:
+        logger.info(f"If free walking: {self.isFreeWalking}")
+        self.isFreeWalking = not self.isFreeWalking
+        self.actionEventQThread.load(self.walkingDirection)
+
+    def moveLeft(self):
+        # 获取当前窗口位置
+        x = self.x()
+        # 窗口向左移动，直到撞到屏幕左边界
+        if x > 0:
+            self.move(x - 15, self.y())
+
+    def moveRight(self):
+        # 获取当前窗口位置和屏幕的尺寸
+        x = self.x()
+        screen = QApplication.desktop().screenGeometry()
+        # 窗口向右移动，直到撞到屏幕右边界
+        if x + self.width() < screen.width():
+            self.move(x + 15, self.y())
 
     def startTimer(self) -> None:
         """启动执行动作的定时器"""
         if not hasattr(self, 'action_timer'):
             self.action_timer = QTimer(self)
             self.action_timer.timeout.connect(self.actionEventQThread.playNextImage)
-        self.action_timer.start(250)
+        self.action_timer.start(200)
 
     def stopTimer(self) -> None:
         """停止执行动作的定时器"""

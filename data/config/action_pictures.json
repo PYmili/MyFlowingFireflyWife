@@ -22,5 +22,13 @@
     "discomfort": {
         "path": "data\\assets\\images\\firefly\\actions\\discomfort",
         "type": ".png"
+    },
+    "left": {
+        "path": "data\\assets\\images\\firefly\\actions\\left",
+        "type": ".png"
+    },
+    "right": {
+        "path": "data\\assets\\images\\firefly\\actions\\right",
+        "type": ".png"
     }
 }
