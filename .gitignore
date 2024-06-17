@@ -171,3 +171,9 @@ result_audio.wav
 
 # test dir.
 tests/
+
+# setup
+setup/
+
+# nuitka-crash-report.xml
+nuitka-crash-report.xml

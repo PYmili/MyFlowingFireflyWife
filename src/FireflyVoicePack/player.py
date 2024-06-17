@@ -1,7 +1,7 @@
 import wave
 import pyaudio
 from loguru import logger
-from PyQt5.QtCore import QThread, pyqtSignal
+from PySide6.QtCore import QThread, Signal
 
 
 class AudioPlayer:
@@ -47,7 +47,7 @@ class AudioPlayer:
 
 class AudioPlayerQThread(QThread):
     # 定义一个信号，用于通知播放完成
-    playbackFinished = pyqtSignal()
+    playbackFinished = Signal()
 
     def __init__(self, audioFilePath: str):
         super().__init__(parent=None)

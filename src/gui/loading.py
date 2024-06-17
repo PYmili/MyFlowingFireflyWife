@@ -1,8 +1,8 @@
 import os
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QMovie
-from PyQt5.QtWidgets import QMainWindow, QLabel, QProgressBar
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QMovie
+from PySide6.QtWidgets import QMainWindow, QLabel, QProgressBar
 
 LOADING_GIF = os.path.join(
     os.path.split(__file__)[0], "data",

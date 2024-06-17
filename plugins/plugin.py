@@ -6,8 +6,8 @@ from io import open
 from abc import ABC, abstractmethod
 from typing import Union, Dict
 from dataclasses import dataclass
-from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QWidget
+from PySide6.QtCore import QThread
+from PySide6.QtWidgets import QWidget
 from loguru import logger
 
 

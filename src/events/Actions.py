@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Any
-from PyQt5.QtCore import pyqtSignal, QThread
+from PySide6.QtCore import Signal, QThread
 from loguru import logger
 
 
@@ -46,18 +46,18 @@ actionAllPicData = {
     "sleep": actionPic.read("sleep"),
     "discomfort": actionPic.read("discomfort"),
     # 非持续动作
-    "eat": actionPic.read("eat"),
-    "love": actionPic.read("love"),
     "left": actionPic.read("left"),
-    "right": actionPic.read("right")
+    "right": actionPic.read("right"),
+    "eat": actionPic.read("eat"),
+    "love": actionPic.read("love")
 }
 
 
 class ActionEvent(QThread):
     """动作事件"""
-    result = pyqtSignal(str)
-    start_timer_signal = pyqtSignal()
-    stop_timer_signal = pyqtSignal()
+    result = Signal(str)
+    start_timer_signal = Signal()
+    stop_timer_signal = Signal()
 
     def __init__(self, switchBackgroundFunc: Any) -> None:
         """

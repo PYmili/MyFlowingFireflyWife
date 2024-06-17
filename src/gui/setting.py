@@ -1,7 +1,7 @@
 from typing import List, Any, Dict, Union
 
-from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtWidgets import (
+from PySide6.QtCore import QThread, Signal
+from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QListWidget,
@@ -15,7 +15,7 @@ from plugins import plugin
 
 
 class StartPluginThread(QThread):
-    result = pyqtSignal(bool)
+    result = Signal(bool)
     def __init__(self, _callback: callable) -> None:
         """使用线程启动Plugin"""
         super().__init__()

@@ -4,15 +4,14 @@ import random
 from typing import *
 
 from loguru import logger
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import (
+from PySide6.QtGui import QPixmap, QAction
+from PySide6.QtWidgets import (
     QMainWindow,
     QLabel,
-    QMenu,
-    QAction
+    QMenu
 )
-from PyQt5.QtCore import Qt, QTimer, QRect, pyqtSignal
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import Qt, QTimer, QRect, Signal
+from PySide6.QtWidgets import QApplication
 
 from .setting import SettingsWidget
 from src.events import ActionEvent
@@ -24,12 +23,13 @@ INDEX_BG_IMAGE = "data/assets/images/firefly/default/bg.png"
 
 
 class MainWindow(QMainWindow):
-    start_timer_signal = pyqtSignal()
-    stop_timer_signal = pyqtSignal()
+    start_timer_signal = Signal()
+    stop_timer_signal = Signal()
 
-    def __init__(self) -> None:
+    def __init__(self, app: QApplication) -> None:
         """主窗口"""
         super().__init__()
+        self.app = app
         self.currentBgImage = INDEX_BG_IMAGE
         self.scaledToWidthSize = 0
         self.fireflyVoicePackThread = None
@@ -48,6 +48,8 @@ class MainWindow(QMainWindow):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
+        self.setWindowTitle("MyFlowingFireflyWife")
+
         # 加载并显示指定图片，并缩小一倍
         self.label = QLabel(self)
         if self.scaledToWidthSize > 0:
@@ -58,14 +60,6 @@ class MainWindow(QMainWindow):
 
         # 设置 QLabel 的大小
         self.label.resize(self.pixmap.size())
-
-        # 将 QLabel 居中放置在窗口中央
-        self.label.move(
-            (self.width() - self.label.width()) // 2,
-            (self.height() - self.label.height()) // 2
-        )
-
-        self.resize(self.pixmap.size())
 
         # 信息label
         self.messageQLabel = QLabel(self)
@@ -147,8 +141,8 @@ class MainWindow(QMainWindow):
             self.drag_pos = event.globalPos()
             event.accept()
             # 界面上半部分为摸头触发区
-            trigger_height = self.height() // 2  # 触发区高度占窗口一半
-            trigger_area = QRect(0, 0, self.width(), trigger_height)
+            trigger_height = self.height() / 4  # 触发区高度占窗口一半
+            trigger_area = QRect(0, 0, self.width(), int(trigger_height))
 
             # 检查点击是否在摸头触发区域内
             if trigger_area.contains(event.pos()):
@@ -247,11 +241,7 @@ class MainWindow(QMainWindow):
             self.pixmap = QPixmap(filePath)
         self.label.setPixmap(self.pixmap)
         self.label.resize(self.pixmap.size())
-        self.label.move(
-            (self.width() - self.label.width()) // 2,
-            (self.height() - self.label.height()) // 2
-        )
-        self.resize(self.pixmap.size())
+        self.resize(self.label.size())
         self.currentBgImage = filePath
             
     def showMenu(self, pos: tuple) -> None:
@@ -304,7 +294,7 @@ class MainWindow(QMainWindow):
                 self.moveRight()
             # 检查是否到达屏幕边缘并改变方向
             if self.isFreeWalking:
-                screen_geometry = QApplication.desktop().screenGeometry()
+                screen_geometry = self.app.primaryScreen().geometry()
                 if (self.walkingDirection == "left" and self.x() <= screen_geometry.x()) or \
                    (self.walkingDirection == "right" and self.x() + self.width() >= screen_geometry.right()):
                     self.walkingDirection = "right" if self.walkingDirection == "left" else "left"
@@ -325,7 +315,7 @@ class MainWindow(QMainWindow):
     def moveRight(self):
         # 获取当前窗口位置和屏幕的尺寸
         x = self.x()
-        screen = QApplication.desktop().screenGeometry()
+        screen = QApplication.primaryScreen().geometry()
         # 窗口向右移动，直到撞到屏幕右边界
         if x + self.width() < screen.width():
             self.move(x + 15, self.y())
@@ -335,7 +325,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'action_timer'):
             self.action_timer = QTimer(self)
             self.action_timer.timeout.connect(self.actionEventQThread.playNextImage)
-        self.action_timer.start(200)
+        self.action_timer.start(220)
 
     def stopTimer(self) -> None:
         """停止执行动作的定时器"""

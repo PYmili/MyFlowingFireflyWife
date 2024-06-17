@@ -1,8 +1,12 @@
 colorama==0.4.6
 loguru==0.7.2
+Nuitka==2.3.4
+ordered-set==4.1.0
 PyAudio==0.2.14
-PyQt5==5.15.10
-PyQt5-Qt5==5.15.2
-PyQt5-sip==12.13.0
+PySide6==6.7.1
+PySide6_Addons==6.7.1
+PySide6_Essentials==6.7.1
+shiboken6==6.7.1
 websockets==11.0.3
 win32-setctime==1.1.0
+zstandard==0.22.0

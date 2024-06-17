@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 from typing import Union
 from loguru import logger
-from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition
+from PySide6.QtCore import QThread, Signal, QMutex, QWaitCondition
 
 from .player import AudioPlayerQThread
 
@@ -33,8 +33,8 @@ class VoicePack:
 
 
 class FireflyVoicePackQThread(QThread):
-    started = pyqtSignal(dict)
-    finished = pyqtSignal()
+    started = Signal(dict)
+    finished = Signal()
     def __init__(self, key: str = None) -> None:
         super().__init__(parent=None)
         self.key = key
@@ -68,7 +68,7 @@ class FireflyVoicePackQThread(QThread):
         # 定义时间段的开始和结束时间
         if 6 <= hour < 8:
             return "morn"  # 早晨
-        elif 11 <= hour < 12:
+        elif 10 <= hour < 12:
             return "noon"  # 中午
         elif 18 <= hour < 21:
             return "even"  # 傍晚

@@ -1,14 +1,14 @@
 import os
 import ctypes
 from ctypes import wintypes
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QWidget,
     QLabel,
     QVBoxLayout,
     QHBoxLayout
 )
-from PyQt5.QtCore import Qt, QRect, QTimer
-from PyQt5.QtGui import QGuiApplication, QPixmap
+from PySide6.QtCore import Qt, QRect, QTimer
+from PySide6.QtGui import QGuiApplication, QPixmap
 
 DEF_IMG = os.path.join(
     os.getcwd(), "data\\assets\\images\\firefly\\default\\bg.png"
