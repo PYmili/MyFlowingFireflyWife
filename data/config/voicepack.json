@@ -18,7 +18,7 @@
                 "wav": "data\\audio\\早睡早起，不要熬夜伤身体呀！.wav"
             }
         ],
-        "other": [
+        "even": [
             {
                 "title": "我叫流萤，是鸢尾花家系的译者。",
                 "wav": "data\\audio\\我叫流萤，是鸢尾花家系的译者。.wav"
@@ -44,7 +44,7 @@
                 "wav": "data\\audio\\晚安！我们与匹诺康尼再会。.wav"
             }
         ],
-        "other": [
+        "even": [
             {
             "title": "啊，你要回去了吗？时间过得真快呀。",
             "wav": "data\\audio\\啊，你要回去了吗？时间过得真快呀。.wav"
