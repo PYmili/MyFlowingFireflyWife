@@ -183,6 +183,8 @@ class MainWindow(QMainWindow):
     
     def showEvent(self, event) -> None:
         self.playFireflyVoice("VoiceOnStart")
+        # 播放启动语音包后尝试初始化setting中的plugins。
+        self.fireflyVoicePackThread.finished.connect(self.settingsWidget.thePluginSettingWindow.initEvent)
         super().showEvent(event)
 
     def playFireflyVoice(self, key: str) -> None:

@@ -10,6 +10,12 @@ from PySide6.QtCore import QThread
 from PySide6.QtWidgets import QWidget
 from loguru import logger
 
+sys.path.insert(0, os.path.join(
+        os.path.abspath(os.path.dirname(os.getcwd()))
+    )
+)
+from src import FireflyVoicePack
+
 
 PLUGIN_DIR = os.path.join(os.getcwd(), "data", "config", "plugin")
 PLUGIN_CONFIG_DIR = os.path.join(PLUGIN_DIR, "plugin.json")
@@ -111,43 +117,46 @@ class pluginLoader:
             )
         )
         self.manager = pluginConfigManager()
-        if _pluginName:
-            self.pluginName = _pluginName
-            self.allDataList: list = []
-            self.data: pluginDataType = self.__readData__()
-        else:
-            logger.info("启动上一次已启动的plugin。")
-            self.allDataList: list = self.manager.readDataBypluginName()
-            for allData in self.allDataList:
-                for key, value in allData.items():
-                    if value.static != "on":
-                        continue
-                    self.data = value
-                    self.pluginName = key
-                    self.on()
+        self.plugin = None
+        self.pluginName = _pluginName
+        self.data: pluginDataType = self.__readData__()
 
     def on(self) -> Union[pluginClassType, None]:
         """
-        打开这个plugin， 并返回object
-        :return Union[object, None]
+        打开这个plugin，并返回object。
+        :return Union[pluginClassType, None]
         """
         logger.info(f"启动 pluginName: {self.pluginName}")
         # 判断是否已启动
         if self.getStaitc() is True:
             logger.warning(f"已启动 pluginName: {self.pluginName}")
             return None
-        
-        # 对plugin进行import
-        self.plugin = importlib.import_module(self.pluginName, "main")
-        result = lambda: getattr(self.plugin.main, "Main", lambda: None)
-        print(result)
-        if not self.getStaitc():
-            logger.error(f"{self.pluginName}启动失败！")
-            self.setStatic(False)
-            return result
-        self.setStatic(True)
-        return result
-            
+
+        # 读取插件数据
+        self.data = self.__readData__()
+        if not self.data:
+            logger.error(f"{self.pluginName}插件数据读取失败，启动终止。")
+            return None
+
+        try:
+            # 动态导入主模块
+            self.plugin = importlib.import_module(self.pluginName, "main")
+            # 获取Main类
+            MainClass = self.plugin.Main
+            if MainClass is None:
+                logger.error(f"{self.pluginName}模块中没有找到Main类。")
+                return None
+
+            # 设置静态状态为启动
+            self.setStatic(True)
+            return MainClass
+        except ImportError as e:
+            logger.error(f"导入{self.pluginName}模块失败：{e}, plugin: {self.plugin}")
+        except Exception as e:
+            logger.error(f"{self.pluginName}模块中发生错误：{e}")
+
+        self.setStatic(False)
+        return None
 
     def off(self) -> bool:
         """禁用这个plugin"""
@@ -162,15 +171,6 @@ class pluginLoader:
         else:
             logger.warning(f"未启动 pluginName: {self.pluginName}")
             return False
-        
-    def offAll(self) -> None:
-        """关闭所有plugin。"""
-        if not self.allDataList:
-            return False
-        pluginNames = [list(i.keys())[0] for i in self.allDataList]
-        for pluginName in pluginNames:
-            self.pluginName = pluginName
-            self.off()
 
     def getStaitc(self) -> bool:
         """当前这个plugin的状态"""

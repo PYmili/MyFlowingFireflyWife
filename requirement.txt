@@ -10,3 +10,5 @@ shiboken6==6.7.1
 websockets==11.0.3
 win32-setctime==1.1.0
 zstandard==0.22.0
+
+-r plugins\\BatteryVoice\\requirement.txt

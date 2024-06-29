@@ -43,6 +43,7 @@ class AudioPlayer:
             stream.close()
             self.audio.close()  # 关闭wave文件
             p.terminate()
+            return False
 
 
 class AudioPlayerQThread(QThread):
