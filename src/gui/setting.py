@@ -1,6 +1,6 @@
 from typing import List, Any, Dict, Union
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, Qt
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -8,163 +8,85 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QTabWidget,
     QLabel, QPushButton,
-    QListWidgetItem,
-    QMessageBox
+    QListWidgetItem
 )
 from loguru import logger
 
-from plugins import plugin
+from src.extends import extend
+from src.extends import allExtend as ALLEXTEND
+from src.gui.window import InfoWindow
 
 
-class StartPluginThread(QThread):
-    result = Signal(bool)
-    def __init__(self, _callback: callable) -> None:
-        """使用线程启动Plugin"""
-        super().__init__()
-        self.__callback = _callback
-
-    def run(self) -> None:
-        self.__callback()
-        self.result.emit(True)
-
-
-class pluginSettingWindow(QWidget):
+class extendSettingWindow(QWidget):
     def __init__(self, parent=None) -> None:
-        """plugin的设置界面"""
+        """extend的设置界面"""
         super().__init__(parent)
         layout = QHBoxLayout(self)
         self.setLayout(layout)
 
-        # plugin的列表
-        self.loader: Union[plugin.pluginLoader, None] = None
-        self.pluginItems: List[Dict[Any, plugin.pluginDataType]] = []
-        self.getpluginItems()
-        self._callback: Union[plugin.pluginCallableType, None] = None
-        self.pluginThread: Union[QThread, None] = None
-        self.startPluginThread: Union[StartPluginThread, None] = None
+        # 需要操作的extend
+        self.extend: extend.ExtendType = None
+
+        # extend的列表
+        self.extendItems: List[extend.ExtendType] = ALLEXTEND
         
         # 左侧列表
-        self.pluginList = QListWidget()
-        self.pluginList.itemClicked.connect(self.displaypluginDetails)
-        self.populatepluginList()
-        layout.addWidget(self.pluginList, 20)  # 分配左侧20%的空间
+        self.extendList = QListWidget()
+        # 连接信号与槽
+        self.extendList.itemClicked.connect(self.on_item_clicked)
+        layout.addWidget(self.extendList, 20)   # 分配左侧20%的空间
+        # 填充左侧列表
+        self.fill_extend_list()
         
         # 右侧详情显示区
         self.detailsFrame = QWidget()
         self.detailsLayout = QVBoxLayout(self.detailsFrame)
         self.detailsLabel = QLabel()
+        self.detailsLabel.setStyleSheet("font-size: 15px;")
         self.detailsLayout.addWidget(self.detailsLabel)
-        layout.addWidget(self.detailsFrame, 80)  # 分配右侧80%的空间
+        self.extendRunOrStopButton = QPushButton()  # 启动或关闭按钮
+        layout.addWidget(self.detailsFrame, 80) # 分配右侧80%的空间
 
-    def initEvent(self) -> None:
-        """Init event"""
-        self.initAllplugin()
-
-    def initAllplugin(self) -> None:
-        """初始化所有plugin"""
-        manager = plugin.pluginConfigManager()
-        for pluginItem in self.pluginItems:
-            for pluginName, pluginInfo in pluginItem.items():
-                static = pluginInfo.static
-                if static is not None and static == 'on':
-                    logger.info(f"setting将初始化plugin: {pluginName}。")
-                    self.onOrOffButton = QPushButton(pluginInfo.static)
-                    self.enableOrDisablepluginEvent(pluginName)
+    def fill_extend_list(self):
+        """填充左侧列表项"""
+        for _extend in self.extendItems:
+            _extend = _extend()
+            item = QListWidgetItem(_extend.InfoJson.name)
+            # 可以将整个ExtendType对象作为item的用户数据，以便在槽函数中访问
+            item.setData(Qt.UserRole, _extend)
+            self.extendList.addItem(item)
     
-    def getpluginItems(self):
-        """获取所有pluginItems"""
-        manager = plugin.pluginConfigManager()
-        result = manager.readDataBypluginName()
-        if result:
-           self.pluginItems = result 
-    
-    def populatepluginList(self):
-        """填充plugin列表"""
-        for pluginItem in self.pluginItems:
-            for name in pluginItem.keys():
-                listItem = QListWidgetItem(name)
-                self.pluginList.addItem(listItem)
+    def on_item_clicked(self, item: QListWidgetItem):
+        """处理列表项点击事件"""
+        self.extend: extend.ExtendType = item.data(Qt.UserRole)
+        details_text = f"名称: {self.extend.InfoJson.name}\n" \
+                    f"作者: {self.extend.InfoJson.author}\n" \
+                    f"版本: {self.extend.InfoJson.version}\n" \
+                    f"是否启动: {'Yes' if self.extend.InfoJson.isStatic else 'No'}\n" \
+                    f"简介: {self.extend.InfoJson.description}"
+        self.detailsLabel.setText(details_text)
+        self.extendRunOrStopButton.setText("关闭" if self.extend.InfoJson.isStatic else "启动")
+        self.extendRunOrStopButton.clicked.connect(self.extendRunOrStopEvent)
+        self.detailsLayout.addWidget(self.extendRunOrStopButton)
 
-    def displaypluginDetails(self, item: QListWidgetItem):
-        """显示选中plugin的详细信息"""
-        self.getpluginItems()   # 更新一下items内容
-        for pluginItem in self.pluginItems:
-            if item.text() not in pluginItem.keys():
-                break
-            self.setOnOrOffButtonEvent(text = item.text(), value = pluginItem[item.text()])
-    
-    def setOnOrOffButtonEvent(self, text: str, value: plugin.pluginDataType) -> None:
-        """设置打开或改变按钮的事件"""
-        static = "启用" if value.static == "off" else "关闭"
-        self.startPluginThread = StartPluginThread(lambda: self.enableOrDisablepluginEvent(text))
-        self.startPluginThread.result.connect(self.onOrOffButtonResultConnectEvent)
-        self.updateDetails(value)
-        self.onOrOffButton = QPushButton(static)
-        self.onOrOffButton.clicked.connect(self.startPluginThread.start)
-        self.detailsLayout.addWidget(self.onOrOffButton)
-    
-    def onOrOffButtonResultConnectEvent(self, result: bool) -> None:
-        """
-        onOrOffButton result connect event.
-        :param result: bool 返回一个bool值用于判断是否启动成功
-        :return None
-        """
-        message = QMessageBox()
-        if not result:
-            logger.error(f"plugin: {self.loader.pluginName}, {self.onOrOffButton.text()}失败！")
-            message.setText("失败！")
-            message.setWindowTitle("Fail")
-            message.setWindowIconText("Start plugin fail")
-        else:
-            message.setText("成功！")
-            message.setWindowTitle("ok")
-            message.setWindowIconText("Start plugin ok")
-        message.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        message.exec()
-
-    def enableOrDisablepluginEvent(self, pluginName: str) -> None:
-        """启用指定的plugin"""
-        # 使用加载器加载plugin
-        self.loader = plugin.pluginLoader(pluginName)
-
-        # 关闭plugin
-        if self.onOrOffButton.text() == "关闭":
-            if not self._callback:
-                return None
-            if self.loader.getStaitc() is False:
-                return None
-            result = self._callback.stop()
-            if not result:
-                return None
-            self.onOrOffButton.setText("启动")
-            self.loader.off()
-            self.loader.save()
-            return None
+    def extendRunOrStopEvent(self) -> None:
+        """启动或关闭扩展事件"""
+        if not self.extend:
+            logger.error("未正确载入extend!")
+            return
         
-        # 启用plugin
-        self._callback: plugin.pluginCallableType = self.loader.on()
-        if not self._callback:
-            return None
-        self._callback: plugin.pluginClassType = self._callback() # 将加载后的模块进行启动
-        if self._callback is not None:
-            self.pluginThread: QThread = self._callback.run()
-            self.pluginThread.start()
-            self.onOrOffButton.setText("关闭")
-            self.loader.save()
+        self.extendRunOrStopButton.setEnabled(False)
+        if self.extend.InfoJson.isStatic is False:
+            logger.info(f"启动 extend: {self.extend.InfoJson.name}")    
+            self.extend.start()
+        elif self.extend.InfoJson.isStatic is True:
+            logger.info(f"关闭 extend: {self.extend.InfoJson.name}")
+            self.extend.stop()
+        self.extendRunOrStopButton.setText("关闭" if self.extend.InfoJson.isStatic else "启动")
+        self.infoWindow = InfoWindow(f"操作extend: {self.extend.InfoJson.name}成功！")
+        self.infoWindow.show()
+        self.extendRunOrStopButton.setEnabled(True)
 
-    def updateDetails(self, pluginData: plugin.pluginDataType):
-        """更新右侧的详细信息显示"""
-        static = "启动" if pluginData.static == "on" else "关闭"
-        address = "\n\t".join(
-            [key+':'+value for key, value in pluginData.address.items() if value != "null"]
-        )
-        self.detailsLabel.setText(
-            f"作者: {pluginData.author}\n" +
-            f"版本: {pluginData.version}\n"+
-            f"简介: {pluginData.description}\n" +
-            f"当前状态: {static}\n" + 
-            f"开源地址: \n\t{address}" 
-        )
 
 class SettingsWidget(QWidget):
     def __init__(self, parent=None):
@@ -179,6 +101,6 @@ class SettingsWidget(QWidget):
         layout.addWidget(self.tabWidget)
         
         # 选项菜单
-        self.thePluginSettingWindow = pluginSettingWindow()
+        self.theextendSettingWindow = extendSettingWindow()
         self.tabWidget.addTab(QWidget(), "基础")
-        self.tabWidget.addTab(self.thePluginSettingWindow, "plugin")
+        self.tabWidget.addTab(self.theextendSettingWindow, "extends")

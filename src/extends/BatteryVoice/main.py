@@ -6,10 +6,9 @@ from typing import Union
 import psutil
 from loguru import logger
 from PySide6.QtCore import Signal, QThread
-from PySide6.QtWidgets import QWidget
 
-from plugin import pluginClassType
-from plugin import FireflyVoicePack  # 插入voice packe 的 player方法。
+from src import FireflyVoicePack
+from src.extends.extend import ExtendType, ExtendInfoType
 
 CONFIG_FILE_DIR = os.path.join(os.getcwd(), "data", "config", "battery_voice.json")
 DATA_AUDIO_DIR = os.path.join(os.getcwd(), "data", "config", "audio")
@@ -104,19 +103,25 @@ class BattryVoiceQThread(QThread):
         }
 
 
-
-class Main(pluginClassType):
+class batteryVoice:
     def __init__(self) -> None:
-        super().__init__()
-        self.th = BattryVoiceQThread()
+        self.battryVoiceThread: QThread = None
+        self.InfoJson: ExtendInfoType = ExtendType.readInfoJson("BatteryVoice")
 
-    def run(self) -> QThread:
-        return self.th
-
-    def stop(self) -> bool:
-        self.th.requestInterruption = True
-        self.th.wait()
+    def start(self) -> bool:
+        self.battryVoiceThread = BattryVoiceQThread()
+        self.battryVoiceThread.start()
+        self.InfoJson.isStatic = True
+        ExtendType.writeInfoJson(self.InfoJson.name, self.InfoJson)
         return True
 
-    def settingWindow(self) -> QWidget:
-        pass
+    def stop(self) -> bool:
+        if not self.battryVoiceThread:
+            logger.error(f"未启动: BattryVoiceQThread")
+            return False
+        self.battryVoiceThread.requestInterruption = True
+        self.battryVoiceThread.wait()
+        self.InfoJson.isStatic = False
+        ExtendType.writeInfoJson(self.InfoJson.name, self.InfoJson)
+        return True
+    
