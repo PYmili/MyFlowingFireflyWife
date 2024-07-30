@@ -2,6 +2,6 @@
     "name": "BatteryVoice",
     "author": "PYmili",
     "version": "beta-202406029",
-    "isStatic": false,
+    "isStatic": true,
     "description": "将通过电池的状态触发不同语音。"
 }

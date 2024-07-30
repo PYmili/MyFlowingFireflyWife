@@ -7,7 +7,7 @@ import psutil
 from loguru import logger
 from PySide6.QtCore import Signal, QThread
 
-from src import FireflyVoicePack
+from src.player import AudioPlayer
 from src.extends.extend import ExtendType, ExtendInfoType
 
 CONFIG_FILE_DIR = os.path.join(os.getcwd(), "data", "config", "battery_voice.json")
@@ -17,6 +17,10 @@ DATA_AUDIO_DIR = os.path.join(os.getcwd(), "data", "config", "audio")
 class BattryVoiceQThread(QThread):
     result = Signal(bool)
     def __init__(self) -> None:
+        """
+        Params:
+            player: callable | 播放器
+        """
         super().__init__(parent=None)
         self.requestInterruption: bool = False     # 用于请求停止服务
         self.isCurrentPowerPlugged: bool = False    # 当前是否插入电源
@@ -82,7 +86,7 @@ class BattryVoiceQThread(QThread):
         playFile = random.choice(playFile)  # 从列表中随机提取一个音频
         playFile = os.path.join(os.getcwd(), playFile['wav'])
         logger.info(f"电量音频播放: {playFile}")
-        audioPlayer = FireflyVoicePack.player.AudioPlayer(playFile)
+        audioPlayer = AudioPlayer(playFile)
         audioPlayer.play()
         return True
         
@@ -116,12 +120,13 @@ class batteryVoice:
         return True
 
     def stop(self) -> bool:
+        self.InfoJson.isStatic = False
+        ExtendType.writeInfoJson(self.InfoJson.name, self.InfoJson)
         if not self.battryVoiceThread:
             logger.error(f"未启动: BattryVoiceQThread")
             return False
         self.battryVoiceThread.requestInterruption = True
+        self.battryVoiceThread.exit(0)
         self.battryVoiceThread.wait()
-        self.InfoJson.isStatic = False
-        ExtendType.writeInfoJson(self.InfoJson.name, self.InfoJson)
         return True
     

@@ -56,8 +56,8 @@ actionAllPicData = {
 class ActionEvent(QThread):
     """动作事件"""
     result = Signal(str)
-    start_timer_signal = Signal()
-    stop_timer_signal = Signal()
+    startActionEventTimerSignal = Signal()
+    stopActionEventTimerSignal = Signal()
 
     def __init__(self, switchBackgroundFunc: Any) -> None:
         """
@@ -73,7 +73,7 @@ class ActionEvent(QThread):
 
     def run(self) -> None:
         """运行"""
-        self.start_timer_signal.emit()
+        self.startActionEventTimerSignal.emit()
 
     def playNextImage(self) -> None:
         """播放"""

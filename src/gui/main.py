@@ -4,44 +4,46 @@ import random
 from typing import *
 
 from loguru import logger
-from PySide6.QtGui import QPixmap, QAction
+from PySide6.QtGui import QPixmap, QAction, QIcon
 from PySide6.QtWidgets import (
     QMainWindow,
     QLabel,
     QMenu
 )
-from PySide6.QtCore import Qt, QTimer, QRect, Signal
+from PySide6.QtCore import Qt, QTimer, QRect, Signal, QSize
 from PySide6.QtWidgets import QApplication
 
-from .setting import SettingsWidget
+from src.gui.setting import SettingsWidget
+from src.gui.mainConfig import mainConfigFile
 from src.events import ActionEvent
 from src.gui.window import InfoWindow, DEF_IMG
 from src.FireflyVoicePack.main import FireflyVoicePackQThread
 from src.events.RoleProperties import Firefly as FireflyRole
 
-INDEX_BG_IMAGE = "data/assets/images/firefly/default/bg.png"
-
 
 class MainWindow(QMainWindow):
-    start_timer_signal = Signal()
-    stop_timer_signal = Signal()
+    startActionEventTimerSignal = Signal()
+    stopActionEventTimerSignal = Signal()
 
     def __init__(self, app: QApplication) -> None:
         """主窗口"""
         super().__init__()
         self.app = app
-        self.currentBgImage = INDEX_BG_IMAGE
-        self.scaledToWidthSize = 0
+        self.mainConfigFileObject = mainConfigFile()                            # 用于读取主窗口的配置文件
+        self.currentBgImage = self.mainConfigFileObject.currentBgImage          # 当前背景图片
+        self.scaledToWidthSize = self.mainConfigFileObject.scaledToWidthSize    # 背景图片缩小倍数
+        self.isFreeWalking = False                                              # 用于判断当前是否正在移动
+        self.walkingDirection = random.choice(["left", "right"])                # 移动事件，从那个方向走动
+
+        # 语言包配置
         self.fireflyVoicePackThread = None
         self.fireflyRoleObject = FireflyRole()
-        self.isFreeWalking = False
-        self.walkingDirection = "left"
 
         # 初始化action event
         self.actionEventQThread = ActionEvent(self.switchBackground)
         self.actionEventQThread.result.connect(self.ActionEventMethod)
-        self.actionEventQThread.start_timer_signal.connect(self.startTimer)
-        self.actionEventQThread.stop_timer_signal.connect(self.stopTimer)
+        self.actionEventQThread.startActionEventTimerSignal.connect(self.startTimer)
+        self.actionEventQThread.stopActionEventTimerSignal.connect(self.stopTimer)
         self.actionEventQThread.start()
 
         # 设置无边框、窗口始终置顶、窗口透明
@@ -50,7 +52,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("MyFlowingFireflyWife")
 
-        # 加载并显示指定图片，并缩小一倍
+        # 加载并显示指定图片，并缩小指定倍
         self.label = QLabel(self)
         if self.scaledToWidthSize > 0:
             self.pixmap = QPixmap(self.currentBgImage).scaledToWidth(self.scaledToWidthSize)
@@ -76,15 +78,17 @@ class MainWindow(QMainWindow):
         self.messageQLabel.hide()
 
         self.menu = QMenu(self)
+        self.menu.setMinimumSize(QSize(70, 120))
         # 自定义菜单样式表
         self.menu.setStyleSheet("""
             QMenu {
                 background-color: #191919; /* 背景颜色 */
                 border: 1px solid #262626; /* 边框颜色 */
                 color: #EEEEEE; /* 文本颜色 */
+                font-size: 15px;
             }
             QMenu::item {
-                padding: 5px 20px; /* 菜单项内边距 */
+                padding: 5px 2px; /* 菜单项内边距 */
             }
             QMenu::item:selected {
                 background-color: #353535; /* 选中项背景颜色 */
@@ -92,32 +96,42 @@ class MainWindow(QMainWindow):
         """)
 
         # 创建设置界面
-        self.settingsWidget = SettingsWidget()
+        self.settingsWidget = SettingsWidget(self.updateConfig)
         self.settingsWidget.hide()
 
         # 添加菜单项
         # 设置
-        config_action = QAction("设置", self)
+        config_action = QAction(self)
+        config_action.setIcon(QIcon("data/assets/images/icon/setting.png"))
+        config_action.setIconText("设置")
         config_action.triggered.connect(self.settingsWidget.show)
         self.menu.addAction(config_action)
 
         # 自由行走
-        freeWalkingQAction = QAction("游动", self)
+        freeWalkingQAction = QAction(self)
+        freeWalkingQAction.setIcon(QIcon("data/assets/images/firefly/lovely/lovely.png"))
+        freeWalkingQAction.setIconText("游动")
         freeWalkingQAction.triggered.connect(self.setFreeWalking)
         self.menu.addAction(freeWalkingQAction)
 
         # 喂食
-        feeding = QAction("喂食", self)
+        feeding = QAction(self)
+        feeding.setIcon(QIcon("data/assets/images/icon/cake.png"))
+        feeding.setIconText("喂食")
         feeding.triggered.connect(self.actionEventQThread.eatEvent)
         self.menu.addAction(feeding)
 
         # 睡觉
-        sleepAction = QAction("睡觉", self)
+        sleepAction = QAction(self)
+        sleepAction.setIcon(QIcon("data/assets/images/icon/sleep.png"))
+        sleepAction.setIconText("睡觉")
         sleepAction.triggered.connect(self.actionEventQThread.sleepEvent)
         self.menu.addAction(sleepAction)
 
         # 退出程序
-        exit_action = QAction("退出", self)
+        exit_action = QAction(self)
+        exit_action.setIcon(QIcon("data/assets/images/icon/exit.png"))
+        exit_action.setIconText("退出")
         exit_action.triggered.connect(self.CustomCloseEvent)
         self.menu.addAction(exit_action)
         self.menu.hide()
@@ -167,8 +181,9 @@ class MainWindow(QMainWindow):
 
     def CustomCloseEvent(self, event) -> None:
         """编写close窗口的自定义事件"""
+        self.hide()
         self.playFireflyVoice("VoiceOnClose")
-        self.fireflyVoicePackThread.finished.connect(self.close)
+        self.fireflyVoicePackThread.played.connect(lambda: exit(0))
 
     def closeEvent(self, event) -> None:
         """重写closeEvent"""
@@ -179,13 +194,11 @@ class MainWindow(QMainWindow):
         # 判断设置窗口存在，存在则关闭
         if self.settingsWidget:
             self.settingsWidget.close()
-        super().closeEvent(event)
+        return super().closeEvent(event)
     
     def showEvent(self, event) -> None:
         self.playFireflyVoice("VoiceOnStart")
-        # 播放启动语音包后尝试初始化setting中的plugins。
-        # self.fireflyVoicePackThread.finished.connect(self.settingsWidget.thePluginSettingWindow.initEvent)
-        super().showEvent(event)
+        return super().showEvent(event)
 
     def playFireflyVoice(self, key: str) -> None:
         self.fireflyVoicePackThread = FireflyVoicePackQThread(key)
@@ -333,3 +346,10 @@ class MainWindow(QMainWindow):
         """停止执行动作的定时器"""
         if hasattr(self, 'action_timer'):
             self.action_timer.stop()
+
+    def updateConfig(self) -> None:
+        """更新当前窗口的配置"""
+        self.mainConfigFileObject = mainConfigFile()
+        self.mainConfigFileObject.readJsonFile()
+        self.currentBgImage = self.mainConfigFileObject.currentBgImage
+        self.scaledToWidthSize = self.mainConfigFileObject.scaledToWidthSize

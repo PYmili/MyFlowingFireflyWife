@@ -6,7 +6,7 @@ from typing import Union
 from loguru import logger
 from PySide6.QtCore import QThread, Signal, QMutex, QWaitCondition
 
-from .player import *
+from src.player import *
 
 DATA_DIR = os.path.join(os.getcwd(), "data")
 
@@ -34,7 +34,7 @@ class VoicePack:
 
 class FireflyVoicePackQThread(QThread):
     started = Signal(dict)
-    finished = Signal()
+    played = Signal()
     def __init__(self, key: str = None) -> None:
         super().__init__(parent=None)
         self.key = key
@@ -55,10 +55,9 @@ class FireflyVoicePackQThread(QThread):
 
         self.started.emit(voicePackData)
         self.player = AudioPlayer(wav)
-        while self.player.play():
-            self.finished.emit()
-        # self.playerThread = AudioPlayerQThread(wav)
-        # self.playerThread.start()
+        self.player.play()
+        self.sleep(5)   # 为了播放完整
+        self.played.emit()
 
     def getTimeOfDay(self) -> str:
         """获取当前时间点对应的时间段"""
