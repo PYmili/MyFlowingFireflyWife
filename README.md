@@ -1,6 +1,6 @@
 # MyFlowingFireflyWife
 
-![icon](data\assets\images\firefly\default\bg.png)
+![icon](data/assets/images/firefly/default/bg.png)
 
 ## 项目简介
 
