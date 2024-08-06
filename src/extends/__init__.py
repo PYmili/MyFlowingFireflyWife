@@ -1,3 +1,4 @@
+from typing import Dict
 from .BatteryVoice.main import batteryVoice
 from .extend import ExtendType
 
@@ -8,6 +9,6 @@ def initExtend(extend: ExtendType) -> ExtendType:
         extend.start()
     return extend
 
-allExtend = []
+allExtend: Dict[str, ExtendType] = {}
 
-allExtend.append(initExtend(batteryVoice))
+allExtend['BatteryVoice'] = initExtend(batteryVoice)

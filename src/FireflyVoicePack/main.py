@@ -6,7 +6,7 @@ from typing import Union
 from loguru import logger
 from PySide6.QtCore import QThread, Signal, QMutex, QWaitCondition
 
-from src.player import *
+from src.MediaPlayer import *
 
 DATA_DIR = os.path.join(os.getcwd(), "data")
 
@@ -71,7 +71,7 @@ class FireflyVoicePackQThread(QThread):
         elif 10 <= hour < 12:
             return "noon"  # 中午
         elif 18 <= hour < 21:
-            return "even"  # 傍晚
+            return "other"  # 傍晚
         elif 21 <= hour < 24 or 0 <= hour < 6:
             return "night"  # 夜晚
         else:

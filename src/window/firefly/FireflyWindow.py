@@ -1,5 +1,3 @@
-import os
-import json
 import random
 from typing import *
 
@@ -7,18 +5,17 @@ from loguru import logger
 from PySide6.QtGui import QPixmap, QAction, QIcon
 from PySide6.QtWidgets import (
     QMainWindow,
-    QLabel,
-    QMenu
+    QLabel
 )
 from PySide6.QtCore import Qt, QTimer, QRect, Signal, QSize
 from PySide6.QtWidgets import QApplication
 
-from src.gui.setting import SettingsWidget
-from src.gui.mainConfig import mainConfigFile
-from src.events import ActionEvent
-from src.gui.window import InfoWindow, DEF_IMG
+from src.window.firefly.FireflyWindowConfig import ConfigFile
+from src.ActionEvent import ActionEvent
+from src.window.message.interface import PopupInterface, DEF_IMG
 from src.FireflyVoicePack.main import FireflyVoicePackQThread
-from src.events.RoleProperties import Firefly as FireflyRole
+from src.ActionEvent.RoleProperties import Firefly as FireflyRole
+from src.window.firefly.menu import Menu
 
 
 class MainWindow(QMainWindow):
@@ -29,7 +26,7 @@ class MainWindow(QMainWindow):
         """主窗口"""
         super().__init__()
         self.app = app
-        self.mainConfigFileObject = mainConfigFile()                            # 用于读取主窗口的配置文件
+        self.mainConfigFileObject = ConfigFile()                            # 用于读取主窗口的配置文件
         self.currentBgImage = self.mainConfigFileObject.currentBgImage          # 当前背景图片
         self.scaledToWidthSize = self.mainConfigFileObject.scaledToWidthSize    # 背景图片缩小倍数
         self.isFreeWalking = False                                              # 用于判断当前是否正在移动
@@ -77,64 +74,12 @@ class MainWindow(QMainWindow):
         self.messageQLabel.move(100, 90)
         self.messageQLabel.hide()
 
-        self.menu = QMenu(self)
-        self.menu.setMinimumSize(QSize(70, 120))
-        # 自定义菜单样式表
-        self.menu.setStyleSheet("""
-            QMenu {
-                background-color: #191919; /* 背景颜色 */
-                border: 1px solid #262626; /* 边框颜色 */
-                color: #EEEEEE; /* 文本颜色 */
-                font-size: 15px;
-            }
-            QMenu::item {
-                padding: 5px 2px; /* 菜单项内边距 */
-            }
-            QMenu::item:selected {
-                background-color: #353535; /* 选中项背景颜色 */
-            }
-        """)
+        # 右键菜单
+        self.RightClickMenu = Menu(self)
 
-        # 创建设置界面
-        self.settingsWidget = SettingsWidget(self.updateConfig)
-        self.settingsWidget.hide()
-
-        # 添加菜单项
-        # 设置
-        config_action = QAction(self)
-        config_action.setIcon(QIcon("data/assets/images/icon/setting.png"))
-        config_action.setIconText("设置")
-        config_action.triggered.connect(self.settingsWidget.show)
-        self.menu.addAction(config_action)
-
-        # 自由行走
-        freeWalkingQAction = QAction(self)
-        freeWalkingQAction.setIcon(QIcon("data/assets/images/firefly/lovely/lovely.png"))
-        freeWalkingQAction.setIconText("游动")
-        freeWalkingQAction.triggered.connect(self.setFreeWalking)
-        self.menu.addAction(freeWalkingQAction)
-
-        # 喂食
-        feeding = QAction(self)
-        feeding.setIcon(QIcon("data/assets/images/icon/cake.png"))
-        feeding.setIconText("喂食")
-        feeding.triggered.connect(self.actionEventQThread.eatEvent)
-        self.menu.addAction(feeding)
-
-        # 睡觉
-        sleepAction = QAction(self)
-        sleepAction.setIcon(QIcon("data/assets/images/icon/sleep.png"))
-        sleepAction.setIconText("睡觉")
-        sleepAction.triggered.connect(self.actionEventQThread.sleepEvent)
-        self.menu.addAction(sleepAction)
-
-        # 退出程序
-        exit_action = QAction(self)
-        exit_action.setIcon(QIcon("data/assets/images/icon/exit.png"))
-        exit_action.setIconText("退出")
-        exit_action.triggered.connect(self.CustomCloseEvent)
-        self.menu.addAction(exit_action)
-        self.menu.hide()
+    def contextMenuEvent(self, e):
+        """右键菜单事件"""
+        return self.RightClickMenu.contextMenuEvent(e)
 
     def mouseMoveEvent(self, event) -> None:
         """
@@ -164,9 +109,6 @@ class MainWindow(QMainWindow):
             else:
                 # 切换提起动作
                 self.actionEventQThread.mentionEvent()
-        elif event.button() == Qt.RightButton:
-            # 在右键点击时显示菜单
-            self.showMenu(event.globalPos())
     
     def mouseReleaseEvent(self, event) -> None:
         """
@@ -179,22 +121,24 @@ class MainWindow(QMainWindow):
             self.actionEventQThread.standbyEvent()
             self.isFreeWalking = False
 
-    def CustomCloseEvent(self, event) -> None:
-        """编写close窗口的自定义事件"""
-        self.hide()
-        self.playFireflyVoice("VoiceOnClose")
-        self.fireflyVoicePackThread.played.connect(lambda: exit(0))
-
     def closeEvent(self, event) -> None:
         """重写closeEvent"""
-        # 判断当前action是否存在，进行释放
-        if self.actionEventQThread:
-            self.actionEventQThread.requestInterruption = True
-            self.actionEventQThread.wait()
-        # 判断设置窗口存在，存在则关闭
-        if self.settingsWidget:
-            self.settingsWidget.close()
-        return super().closeEvent(event)
+        self.hide()
+        self.playFireflyVoice("VoiceOnClose")
+        try:
+            # 判断当前action是否存在，进行释放
+            if self.actionEventQThread:
+                self.actionEventQThread.requestInterruption = True
+                self.actionEventQThread.wait()
+            # 判断设置窗口存在，存在则关闭
+            if self.settingsWidget:
+                self.settingsWidget.close()
+            if self.fireflyVoicePackThread:
+                self.fireflyVoicePackThread.requestInterruption()
+                self.fireflyVoicePackThread.exit()
+                self.fireflyVoicePackThread.wait()
+        finally:
+            return super().closeEvent(event)
     
     def showEvent(self, event) -> None:
         self.playFireflyVoice("VoiceOnStart")
@@ -206,43 +150,11 @@ class MainWindow(QMainWindow):
         self.fireflyVoicePackThread.start()
 
     def VoicePackStartedCallback(self, result: dict) -> None:
-        self.infoWindow = InfoWindow(
+        self.popupFace = PopupInterface(
             result['title'],
             result.get('img') if result.get('img') else DEF_IMG
         )
-        self.infoWindow.show()
-
-    def changeImage(self, mood: str = None) -> None:
-        """
-        从 JSON 文件中随机选择并设置新的图片
-        :param mood: 心情关键字
-        :return None
-        """
-        emojiPackDir = os.path.join("data", "config", "emoji_pack.json")
-        with open(emojiPackDir, "r") as f:
-            data = json.load(f)
-            if mood is None:
-                mood = random.choice(list(data["moods"].keys()))
-            try:
-                files = random.choice(data['moods'][mood])['path']
-                file_path = random.choice(files)
-            except KeyError:
-                logger.error("错误的关键字：" + mood)
-                return None
-            
-            # 检查文件是否存在
-            if os.path.exists(file_path) is False:
-                logger.error("File does not exist: "\
-                             f"path: {file_path}")
-                return None
-            
-            # 图片重复，将重新获取
-            if self.currentBgImage == file_path:
-                self.changeImage()
-                return None
-            
-            logger.info(f"mood: {mood}, file: {file_path}")
-            self.switchBackground(file_path)
+        self.popupFace.show()
     
     def switchBackground(self, filePath: str) -> None:
         """
@@ -258,28 +170,6 @@ class MainWindow(QMainWindow):
         self.label.resize(self.pixmap.size())
         self.resize(self.label.size())
         self.currentBgImage = filePath
-            
-    def showMenu(self, pos: tuple) -> None:
-        """
-        创建并显示右键菜单
-        :param pos: tuple 当前鼠标坐标
-        :return None
-        """
-        self.menu.show()
-        self.menu.exec_(pos)
-
-    def showMessage(self, text: str) -> None:
-        """
-        显示消息提示
-        :param text: str 文本
-        :return None
-        """
-        splitText = text.split("</end>")
-        self.changeImage(mood=splitText[-1])
-        # 设置定时隐藏信息
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.timerHideMessageEvent)
-        self.timer.start(5000)
     
     def timerHideMessageEvent(self) -> None:
         """
@@ -340,7 +230,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'action_timer'):
             self.action_timer = QTimer(self)
             self.action_timer.timeout.connect(self.actionEventQThread.playNextImage)
-        self.action_timer.start(220)
+        self.action_timer.start(200)
 
     def stopTimer(self) -> None:
         """停止执行动作的定时器"""
@@ -349,7 +239,7 @@ class MainWindow(QMainWindow):
 
     def updateConfig(self) -> None:
         """更新当前窗口的配置"""
-        self.mainConfigFileObject = mainConfigFile()
+        self.mainConfigFileObject = ConfigFile()
         self.mainConfigFileObject.readJsonFile()
         self.currentBgImage = self.mainConfigFileObject.currentBgImage
         self.scaledToWidthSize = self.mainConfigFileObject.scaledToWidthSize

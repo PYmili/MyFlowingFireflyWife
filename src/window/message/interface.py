@@ -15,7 +15,7 @@ DEF_IMG = os.path.join(
 )
 
 
-class InfoWindow(QWidget):
+class PopupInterface(QWidget):
     def __init__(
             self,
             content: str,

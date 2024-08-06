@@ -11,7 +11,7 @@ if os.path.isfile(CONDIF_FILE) is False:
         logger.info(e)
 
 
-class mainConfigFile:
+class ConfigFile:
     def __init__(self) -> None:
         self.scaledToWidthSize: int = 0     # 文件缩放倍数
         self.currentBgImage: str = None     # 当前背景图片

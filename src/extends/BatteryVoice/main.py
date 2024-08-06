@@ -7,7 +7,7 @@ import psutil
 from loguru import logger
 from PySide6.QtCore import Signal, QThread
 
-from src.player import AudioPlayer
+from src.MediaPlayer import AudioPlayer
 from src.extends.extend import ExtendType, ExtendInfoType
 
 CONFIG_FILE_DIR = os.path.join(os.getcwd(), "data", "config", "battery_voice.json")
@@ -22,7 +22,7 @@ class BattryVoiceQThread(QThread):
             player: callable | 播放器
         """
         super().__init__(parent=None)
-        self.requestInterruption: bool = False     # 用于请求停止服务
+        self.requestInterruptionValue: bool = False     # 用于请求停止服务
         self.isCurrentPowerPlugged: bool = False    # 当前是否插入电源
         self.isLowBattery: bool = False            # 是否为低电量
         self.isHealthyPower: bool = False          # 是否为健康电量
@@ -33,9 +33,10 @@ class BattryVoiceQThread(QThread):
             logger.warning("未获取到当前电脑的电池信息。")
             self.result.emit(False)
             return None
-        while not self.requestInterruption:
+        while not self.requestInterruptionValue:
             __batteryInfo = self.getBatteryInfo()
             if __batteryInfo is None:
+                self.sleep(3)
                 break
             percent: int = __batteryInfo.get("percent")                 # 电源百分比
             powerPlugged: bool = __batteryInfo.get("power_plugged")     # 是否插入电源适配器
@@ -54,6 +55,7 @@ class BattryVoiceQThread(QThread):
                 self.playAudio("power_not_plugged")    # 播放未插入电源适配器音频
 
             if self.isCurrentPowerPlugged is False:
+                self.sleep(3)
                 continue
  
             # 电量各阶段
@@ -66,6 +68,7 @@ class BattryVoiceQThread(QThread):
             elif percent == 100 and self.isFullPower is False:
                 self.playAudio("FULL_POWER")        # 播放充满音频
                 self.isFullPower = True
+            self.sleep(3)
 
     def playAudio(self, key: str) -> bool:
         """
@@ -86,8 +89,8 @@ class BattryVoiceQThread(QThread):
         playFile = random.choice(playFile)  # 从列表中随机提取一个音频
         playFile = os.path.join(os.getcwd(), playFile['wav'])
         logger.info(f"电量音频播放: {playFile}")
-        audioPlayer = AudioPlayer(playFile)
-        audioPlayer.play()
+        self.audioPlayer = AudioPlayer(playFile)
+        self.audioPlayer.play()
         return True
         
     @staticmethod
@@ -125,7 +128,8 @@ class batteryVoice:
         if not self.battryVoiceThread:
             logger.error(f"未启动: BattryVoiceQThread")
             return False
-        self.battryVoiceThread.requestInterruption = True
+        self.battryVoiceThread.requestInterruptionValue = True
+        self.battryVoiceThread.requestInterruption()
         self.battryVoiceThread.exit(0)
         self.battryVoiceThread.wait()
         return True
