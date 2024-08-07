@@ -6,11 +6,6 @@
 
 MyFlowingFireflyWife 是一个使用 Python 开发的桌面宠物应用，灵感来源于星穹铁道中的角色“流萤”。该应用旨在为用户提供一个可爱的虚拟角色，增添桌面的趣味性和活力。
 
-## 当前更新 2024-07-07
-
-1. 删除plugins功能，更改为extends
-2. 优化结构，为pyinstaller打包适配
-
 ### 使用说明
 
 - 下载并安装 MyFlowingFireflyWife 应用。
