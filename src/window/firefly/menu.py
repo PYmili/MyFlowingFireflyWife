@@ -14,7 +14,7 @@ class Menu:
 
         self.manageAction = Action(
             FluentIcon.HOME_FILL, "管理",
-            triggered=lambda: ManagementWindow.MainWindow(self).show()
+            triggered=lambda: ManagementWindow.MainWindow(self.parent).show()
         )
         self.freeWalkingAction = Action(
             FluentIcon.APPLICATION, "游动",

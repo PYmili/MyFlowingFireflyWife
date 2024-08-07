@@ -2,12 +2,12 @@ import random
 from typing import *
 
 from loguru import logger
-from PySide6.QtGui import QPixmap, QAction, QIcon
+from PySide6.QtGui import QPixmap, QMouseEvent
 from PySide6.QtWidgets import (
     QMainWindow,
     QLabel
 )
-from PySide6.QtCore import Qt, QTimer, QRect, Signal, QSize
+from PySide6.QtCore import Qt, QTimer, QRect, Signal
 from PySide6.QtWidgets import QApplication
 
 from src.window.firefly.FireflyWindowConfig import ConfigFile
@@ -26,11 +26,19 @@ class MainWindow(QMainWindow):
         """主窗口"""
         super().__init__()
         self.app = app
-        self.mainConfigFileObject = ConfigFile()                            # 用于读取主窗口的配置文件
-        self.currentBgImage = self.mainConfigFileObject.currentBgImage          # 当前背景图片
-        self.scaledToWidthSize = self.mainConfigFileObject.scaledToWidthSize    # 背景图片缩小倍数
-        self.isFreeWalking = False                                              # 用于判断当前是否正在移动
-        self.walkingDirection = random.choice(["left", "right"])                # 移动事件，从那个方向走动
+        self.mainConfigFileObject = ConfigFile()    # 用于读取主窗口的配置文件
+
+        self.currentBgImage = self.mainConfigFileObject.data.get(
+            "currentBgImage", DEF_IMG)               # 当前背景图片
+        self.scaling = self.mainConfigFileObject.data.get(
+            "scaling", 0)                   # 背景图片缩小比例
+        self.isPlayVoiceOnStart: bool = self.mainConfigFileObject.data.get(
+            "is_play_VoiceOnStart", False)  # 是否播放程序启动音频
+        self.isPlayVoiceOnClose: bool = self.mainConfigFileObject.data.get(
+            "is_play_VoiceOnClose", False)  # 是否播放程序结束音频
+        
+        self.isFreeWalking = False  # 用于判断当前是否正在移动
+        self.walkingDirection = random.choice(["left", "right"])    # 移动事件，从那个方向走动
 
         # 语言包配置
         self.fireflyVoicePackThread = None
@@ -43,55 +51,31 @@ class MainWindow(QMainWindow):
         self.actionEventQThread.stopActionEventTimerSignal.connect(self.stopTimer)
         self.actionEventQThread.start()
 
-        # 设置无边框、窗口始终置顶、窗口透明
+        # 设置无边框、窗口始终置顶、窗口透明、标题
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-
         self.setWindowTitle("MyFlowingFireflyWife")
 
         # 加载并显示指定图片，并缩小指定倍
         self.label = QLabel(self)
-        if self.scaledToWidthSize > 0:
-            self.pixmap = QPixmap(self.currentBgImage).scaledToWidth(self.scaledToWidthSize)
-        else:
-            self.pixmap = QPixmap(self.currentBgImage)
         self.switchBackground(self.currentBgImage)
-
-        # 设置 QLabel 的大小
-        self.label.resize(self.pixmap.size())
-
-        # 信息label
-        self.messageQLabel = QLabel(self)
-        self.messageQLabel.setStyleSheet("""
-            QLabel {
-                background-color: #FFD700; /* 背景颜色 */
-                color: black; /* 文本颜色 */
-                padding: 5px 10px; /* 内边距 */
-                border-radius: 10px; /* 圆角 */
-            }
-        """)
-        self.messageQLabel.adjustSize()
-        self.messageQLabel.move(100, 90)
-        self.messageQLabel.hide()
 
         # 右键菜单
         self.RightClickMenu = Menu(self)
 
-    def contextMenuEvent(self, e):
+    def contextMenuEvent(self, event):
         """右键菜单事件"""
-        return self.RightClickMenu.contextMenuEvent(e)
+        return self.RightClickMenu.contextMenuEvent(event)
 
-    def mouseMoveEvent(self, event) -> None:
-        """
-        重写 mouseMoveEvent 以实现窗口拖动
-        :return None
-        """
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """重写 mouseMoveEvent 以实现窗口拖动"""
         if event.buttons() == Qt.LeftButton:
             self.move(self.pos() + event.globalPos() - self.drag_pos)
             self.drag_pos = event.globalPos()
             event.accept()
+        return super().mouseMoveEvent(event)
 
-    def mousePressEvent(self, event) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """
         重写 mousePressEvent
         :return None
@@ -109,8 +93,9 @@ class MainWindow(QMainWindow):
             else:
                 # 切换提起动作
                 self.actionEventQThread.mentionEvent()
+        return super().mousePressEvent(event)
     
-    def mouseReleaseEvent(self, event) -> None:
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """
         重写鼠标释放
         :return None
@@ -120,36 +105,53 @@ class MainWindow(QMainWindow):
             # 释放mention action, 重启 standbyAction
             self.actionEventQThread.standbyEvent()
             self.isFreeWalking = False
+        return super().mouseReleaseEvent(event)
 
     def closeEvent(self, event) -> None:
         """重写closeEvent"""
+        # 播放退出语音
         self.hide()
-        self.playFireflyVoice("VoiceOnClose")
+        if self.isPlayVoiceOnClose is True:
+            self.playFireflyVoice("VoiceOnClose")
+        if self.fireflyVoicePackThread:
+            self.fireflyVoicePackThread.exec_()
+
         try:
+            self.stopTimer()
             # 判断当前action是否存在，进行释放
             if self.actionEventQThread:
                 self.actionEventQThread.requestInterruption = True
+                self.actionEventQThread.exit()
                 self.actionEventQThread.wait()
-            # 判断设置窗口存在，存在则关闭
-            if self.settingsWidget:
-                self.settingsWidget.close()
-            if self.fireflyVoicePackThread:
-                self.fireflyVoicePackThread.requestInterruption()
-                self.fireflyVoicePackThread.exit()
-                self.fireflyVoicePackThread.wait()
+        except Exception as e:
+            logger.error(e)
         finally:
             return super().closeEvent(event)
     
     def showEvent(self, event) -> None:
-        self.playFireflyVoice("VoiceOnStart")
-        return super().showEvent(event)
+        # 播放启动语音
+        try:
+            if self.isPlayVoiceOnStart is True:
+                self.playFireflyVoice("VoiceOnStart")
+        except Exception as e:
+            logger.error(e)
+        finally:
+            return super().showEvent(event)
 
     def playFireflyVoice(self, key: str) -> None:
+        """
+        通过`key`值生成播放指定语音的线程
+        :param key: str | 需要播放语音的key
+        """
         self.fireflyVoicePackThread = FireflyVoicePackQThread(key)
         self.fireflyVoicePackThread.started.connect(self.VoicePackStartedCallback)
         self.fireflyVoicePackThread.start()
 
     def VoicePackStartedCallback(self, result: dict) -> None:
+        """
+        语音包播放后，获取`result`，并生成弹窗`PopupInterface`
+        :param result: dict | 返回值
+        """
         self.popupFace = PopupInterface(
             result['title'],
             result.get('img') if result.get('img') else DEF_IMG
@@ -158,33 +160,26 @@ class MainWindow(QMainWindow):
     
     def switchBackground(self, filePath: str) -> None:
         """
-        切换背景图片
-        :param filePath: str 文件路径
-        :return None
+        根据`filePath`值，切换背景图片
+        :param filePath: str | 文件路径
         """
-        if self.scaledToWidthSize > 0:
-            self.pixmap = QPixmap(filePath).scaledToWidth(self.scaledToWidthSize)
-        else:
-            self.pixmap = QPixmap(filePath)
-        self.label.setPixmap(self.pixmap)
-        self.label.resize(self.pixmap.size())
-        self.resize(self.label.size())
+        pixmap = QPixmap(filePath)
+        if self.scaling > 0:
+            pixmap = pixmap.scaled(
+                pixmap.width() // self.scaling,
+                pixmap.height() // self.scaling,
+                Qt.KeepAspectRatio
+            )
+        
+        self.label.setPixmap(pixmap)
+        self.label.resize(pixmap.size())
+        self.resize(pixmap.size())
         self.currentBgImage = filePath
-    
-    def timerHideMessageEvent(self) -> None:
-        """
-        定时隐藏信息框事件
-        :return None
-        """
-        if self.timer:
-            self.messageQLabel.hide()
-            self.timer.stop()
 
     def ActionEventMethod(self, result: str) -> None:
         """
         动作事件的返回方法
-        :param result: bool 判断是否正常结束
-        :return None
+        :param result: bool | 判断是否正常结束
         """
         if not result:
             return None
@@ -194,9 +189,10 @@ class MainWindow(QMainWindow):
         if self.isFreeWalking is True:
             self.actionEventQThread.load(self.walkingDirection)
             if self.walkingDirection == "left":
-                self.moveLeft()
+                moveFunc = self.FireflyMove("left")
             elif self.walkingDirection == "right":
-                self.moveRight()
+                moveFunc = self.FireflyMove("right")
+            moveFunc(self)
             # 检查是否到达屏幕边缘并改变方向
             if self.isFreeWalking:
                 screen_geometry = self.app.primaryScreen().geometry()
@@ -206,24 +202,31 @@ class MainWindow(QMainWindow):
                     logger.info(f"Reached screen edge, turning to {self.walkingDirection}")
             
     def setFreeWalking(self) -> None:
+        """设置为自由行动状态"""
         logger.info(f"If free walking: {self.isFreeWalking}")
         self.isFreeWalking = not self.isFreeWalking
         self.actionEventQThread.load(self.walkingDirection)
 
-    def moveLeft(self):
-        # 获取当前窗口位置
-        x = self.x()
-        # 窗口向左移动，直到撞到屏幕左边界
-        if x > 0:
-            self.move(x - 15, self.y())
+    def FireflyMove(self, direction: str) -> callable:
+        """
+        向指定方向移动`左右`
+        :param direction: str | 方向， left or right
+        :return callable~
+        """
+        def left(self):
+            x = self.x()
+            # 窗口向左移动，直到撞到屏幕左边界
+            if x > 0:
+                self.move(x - 15, self.y())
 
-    def moveRight(self):
-        # 获取当前窗口位置和屏幕的尺寸
-        x = self.x()
-        screen = QApplication.primaryScreen().geometry()
-        # 窗口向右移动，直到撞到屏幕右边界
-        if x + self.width() < screen.width():
-            self.move(x + 15, self.y())
+        def right(self):
+            # 获取当前窗口位置和屏幕的尺寸
+            x = self.x()
+            screen = QApplication.primaryScreen().geometry()
+            # 窗口向右移动，直到撞到屏幕右边界
+            if x + self.width() < screen.width():
+                self.move(x + 15, self.y())
+        return left if direction == "left" else right
 
     def startTimer(self) -> None:
         """启动执行动作的定时器"""
@@ -240,6 +243,8 @@ class MainWindow(QMainWindow):
     def updateConfig(self) -> None:
         """更新当前窗口的配置"""
         self.mainConfigFileObject = ConfigFile()
-        self.mainConfigFileObject.readJsonFile()
-        self.currentBgImage = self.mainConfigFileObject.currentBgImage
-        self.scaledToWidthSize = self.mainConfigFileObject.scaledToWidthSize
+        self.mainConfigFileObject.data = self.mainConfigFileObject.read()
+        # 更新数据
+        self.scaling = self.mainConfigFileObject.data.get("scaling", 0)
+        self.isPlayVoiceOnStart = self.mainConfigFileObject.data.get("is_play_VoiceOnStart", True)
+        self.isPlayVoiceOnClose = self.mainConfigFileObject.data.get("is_play_VoiceOnClose", True)

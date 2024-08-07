@@ -1,14 +1,16 @@
 import os
+from typing import Union
 import ctypes
 from ctypes import wintypes
+from qfluentwidgets import (
+    ImageLabel, StrongBodyLabel, VBoxLayout, FluentIcon
+)
 from PySide6.QtWidgets import (
     QWidget,
-    QLabel,
-    QVBoxLayout,
     QHBoxLayout
 )
 from PySide6.QtCore import Qt, QRect, QTimer
-from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtGui import QGuiApplication, QIcon
 
 DEF_IMG = os.path.join(
     os.getcwd(), "data\\assets\\images\\firefly\\default\\bg.png"
@@ -19,46 +21,37 @@ class PopupInterface(QWidget):
     def __init__(
             self,
             content: str,
-            iconImagePath: str = None,
+            icon: Union[str, QIcon, FluentIcon] = DEF_IMG,
             closeDelay: int = 5000
         ) -> None:
         super().__init__()
-        iconImagePath = iconImagePath if iconImagePath else DEF_IMG
         # 设置窗口标志为无边框
         self.setWindowFlags(Qt.FramelessWindowHint)
         
         # 设置窗口样式
         self.setStyleSheet("""
-            background-color: #87CEFA;  /*  蓝色 */
-            color: white;  /* 文本颜色 */
+            QWidget {
+                border-radius: 20px; /* 设置圆角大小 */
+                background-color: #FFFFFF; /* 设置背景颜色为纯白色 */
+            }
         """)
 
         # 设置窗口大小
-        self.resize(400, 120)
+        self.resize(350, 120)
 
         # 创建布局
-        layout = QVBoxLayout()
+        self.mainLayout = VBoxLayout(self)
 
-        # 创建带图标的标签
-        icon_label = QLabel()
-        qpixmapIconImage = QPixmap(iconImagePath).scaled(
-            80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-        icon_label.setPixmap(qpixmapIconImage)  # 设置图标路径并调整大小
-        self.textLabel = QLabel(content, self)
-        self.textLabel.setStyleSheet("font-size: 15px;")
-        # self.textLabel.setMaximumWidth(300)
-
-        # 创建水平布局并添加图标和文本标签
-        hbox = QHBoxLayout()
-        hbox.addWidget(icon_label, stretch=2)  # 添加图标到布局
-        hbox.addWidget(self.textLabel, stretch=8)   # 添加文本到布局
-
-        # 将水平布局添加到垂直布局
-        layout.addLayout(hbox)
-
-        # 设置布局
-        self.setLayout(layout)
+        # 创建带图标的标签和文本
+        self.iconLabel = ImageLabel(icon)
+        self.iconLabel.scaledToHeight(80)
+        self.iconLabel.setBorderRadius(8, 8, 8, 8)
+        self.textLabel = StrongBodyLabel(content)
+        # 创建内容的布局
+        self.contentLayout = QHBoxLayout()
+        self.contentLayout.addWidget(self.iconLabel)
+        self.contentLayout.addWidget(self.textLabel)
+        self.mainLayout.addLayout(self.contentLayout)
 
         # 设置窗口位置在当前屏幕的右下角，且不与任务栏重叠
         self.adjustPosition()
@@ -123,3 +116,14 @@ class PopupInterface(QWidget):
         self.resize(int(self.textLabel.width()*1.5), self.height())
         self.adjustPosition()
         super().showEvent(event)
+
+
+if __name__ == "__main__":
+    import sys
+    from PySide6.QtWidgets import QApplication
+    app = QApplication(sys.argv)
+    window = PopupInterface(
+        "test"
+    )
+    window.show()
+    app.exec()

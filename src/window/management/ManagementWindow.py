@@ -36,6 +36,7 @@ class MainWindow(MSFluentWindow):
         self.homeInterface = UniversalWidget('Home Interface', self)
         self.extendInterface = ExtendInterface.MainWindow('Extends Interface', self)
         self.settingface = SettingInterface.MainWindow('Setting Interface', self)
+        self.settingface.FireflyWindowUpdate = FireflyWindowParent.updateConfig
 
         self.initNavigation()
         self.initWindow()
@@ -66,7 +67,7 @@ class MainWindow(MSFluentWindow):
     def helpMessageBox(self):
         messagebox = MessageBox(
             '支持作者🥰',
-            '个人开发不易，如果您喜欢这个项目，可以考虑请作者喝一瓶快乐水🥤。您的支持就是作者开发和维护项目的动力🚀',
+            '开发不易，如果您喜欢项目，可以考虑请开发者喝一瓶快乐水🥤。您的支持就是我们开发和维护项目的动力🚀',
             self
         )
         messagebox.yesButton.setText('必须滴！')

@@ -177,3 +177,6 @@ setup/
 
 # nuitka-crash-report.xml
 nuitka-crash-report.xml
+
+# build bat
+build.bat

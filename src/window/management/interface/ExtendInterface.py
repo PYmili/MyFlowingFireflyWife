@@ -1,5 +1,6 @@
 from typing import Union, Dict
 from loguru import logger
+from qfluentwidgets import TeachingTip, TeachingTipTailPosition, InfoBarIcon
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import QFrame, QWidget, QVBoxLayout
 from src.window.management.interface.card import AppCard
@@ -56,6 +57,7 @@ class MainWindow(QFrame):
             )
             _card.openButton.setText("启动" if item.isStatic is False else "关闭")
             _card.openButton.clicked.connect(lambda: self.openButtonEvent(item.name))
+            _card.moreButton.clicked.connect(lambda: self.notWrittenTeachingTip(_card.moreButton))
             self.cardItems[item.name] = _card
             self.CardLayout.addWidget(_card)
             self.CardLayout.addStretch(1)
@@ -83,3 +85,15 @@ class MainWindow(QFrame):
         self.enableExtendThread = EnableExtendQThread(_extend)
         self.enableExtendThread.ButtonText.connect(enableExtendEvent)
         self.enableExtendThread.start()
+
+    def notWrittenTeachingTip(self, target):
+        TeachingTip.create(
+            target=target,
+            icon=InfoBarIcon.WARNING,
+            title='未响应...😴',
+            content="抱歉，暂未编写该功能！😔",
+            isClosable=True,
+            tailPosition=TeachingTipTailPosition.BOTTOM,
+            duration=2000,
+            parent=self
+        )

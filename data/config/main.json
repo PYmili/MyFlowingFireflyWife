@@ -1,4 +1,6 @@
 {
-    "scaledToWidthSize": 0,
-    "currentBgImage": "data\\assets\\images\\firefly\\default\\bg.png"
+    "scaling": 0,
+    "currentBgImage": "data\\assets\\images\\firefly\\default\\bg.png",
+    "is_play_VoiceOnStart": false,
+    "is_play_VoiceOnClose": false
 }
