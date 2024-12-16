@@ -11,7 +11,11 @@ from qfluentwidgets import (NavigationItemPosition, MessageBox, setTheme, Theme,
 from qfluentwidgets import FluentIcon as FIF
 from loguru import logger
 
-from src.window.management.interface import ExtendInterface, SettingInterface
+from src.window.management.interface import (
+    ExtendInterface,
+    SettingInterface,
+    live2dInterface
+)
 
 
 class UniversalWidget(QFrame):
@@ -36,6 +40,7 @@ class MainWindow(MSFluentWindow):
         self.homeInterface = UniversalWidget('Home Interface', self)
         self.extendInterface = ExtendInterface.MainWindow('Extends Interface', self)
         self.settingface = SettingInterface.MainWindow('Setting Interface', self)
+        self.live2dSettingInterface = live2dInterface.MainWindow('Live 2D Settings', self)
         self.settingface.FireflyWindowUpdate = FireflyWindowParent.updateConfig
 
         self.initNavigation()
@@ -44,6 +49,7 @@ class MainWindow(MSFluentWindow):
     def initNavigation(self):
         self.addSubInterface(self.homeInterface, FIF.HOME, '主页', FIF.HOME_FILL)
         self.addSubInterface(self.extendInterface, FIF.APPLICATION, '扩展')
+        self.addSubInterface(self.live2dSettingInterface, FIF.CUT, "live2d")
 
         self.addSubInterface(self.settingface, FIF.SETTING, '设置', FIF.SETTING, NavigationItemPosition.BOTTOM)
 

@@ -19,12 +19,12 @@ from src.window.management.interface.groupHeaderCard import GroupHeaderCardWidge
 
 
 class MainWindow(QFrame):
-    def __init__(self, windowName: str, parent: Union[QWidget, None] = None) -> None:
+    def __init__(self, window_name: str, parent: Union[QWidget, None] = None) -> None:
         super().__init__(parent)
-        self.setObjectName(windowName.replace(' ', '-'))
+        self.setObjectName(window_name.replace(' ', '-'))
         self.MainLayout = QVBoxLayout()
-        self.GoupHeaderCard = GroupHeaderCardWidget()
-        self.MainLayout.addWidget(self.GoupHeaderCard)
+        self.GroupHeaderCard = GroupHeaderCardWidget()
+        self.MainLayout.addWidget(self.GroupHeaderCard)
         self.setLayout(self.MainLayout)
 
         # 人物窗口的更新方法
@@ -35,27 +35,27 @@ class MainWindow(QFrame):
         self.updateBasicSetting()
 
     def initBasicSetting(self) -> None:
-        self.GoupHeaderCard.setTitle("基础设置")
-        self.GoupHeaderCard.setBorderRadius(8)
+        self.GroupHeaderCard.setTitle("基础设置")
+        self.GroupHeaderCard.setBorderRadius(8)
 
         # 人物窗口设置
         self.settingPushButton = PushButton("设置")
         self.settingPushButton.clicked.connect(lambda: self.notWrittenTeachingTip(self.settingPushButton))
         self.settingPushButton.setFixedWidth(120)
-        self.GoupHeaderCard.addGroup(FluentIcon.MENU, "人物窗口", "设置人物的窗口外观，性能等", self.settingPushButton)
+        self.GroupHeaderCard.addGroup(FluentIcon.MENU, "人物窗口", "设置人物的窗口外观，性能等", self.settingPushButton)
 
         # 人物缩放选择
         self.comboBox = ComboBox()
         self.comboBox.setFixedWidth(320)
         self.comboBox.addItems(["0", "2", "4", "8"])
-        self.GoupHeaderCard.addGroup(FluentIcon.ZOOM_OUT, "人物缩放", "设置当前人物的缩放倍数", self.comboBox)
+        self.GroupHeaderCard.addGroup(FluentIcon.ZOOM_OUT, "人物缩放", "设置当前人物的缩放倍数", self.comboBox)
 
         # 是否打开/关闭 启动程序音频和结束程序音频
         self.switchVoiceOnStart = SwitchButton()
         self.switchVoiceOnClose = SwitchButton()
-        self.GoupHeaderCard.addGroup(
+        self.GroupHeaderCard.addGroup(
             FluentIcon.PLAY_SOLID, "启动音频", "设置程序启动时的音频播放", self.switchVoiceOnStart)
-        self.GoupHeaderCard.addGroup(
+        self.GroupHeaderCard.addGroup(
             FluentIcon.PLAY_SOLID, "结束音频", "设置程序结束时的音频播放", self.switchVoiceOnClose)
 
         # 输入api key
@@ -63,7 +63,7 @@ class MainWindow(QFrame):
         self.lineEdit.setFixedWidth(320)
         self.lineEdit.setPlaceholderText("输入你的 api key")
         self.lineEdit.textEdited.connect(lambda: self.notWrittenTeachingTip(self.lineEdit))
-        group = self.GoupHeaderCard.addGroup(FluentIcon.CODE, "ApiKey", "请输入正确的ApiKey", self.lineEdit)
+        group = self.GroupHeaderCard.addGroup(FluentIcon.CODE, "ApiKey", "请输入正确的ApiKey", self.lineEdit)
         group.setSeparatorVisible(True) # 添加末尾分隔
 
         # 配置生效确认
@@ -86,7 +86,7 @@ class MainWindow(QFrame):
         self.bottomLayout.addWidget(self.NoButton, 0, Qt.AlignRight)
         self.bottomLayout.setAlignment(Qt.AlignVCenter)
         # 添加底部工具栏
-        self.GoupHeaderCard.vBoxLayout.addLayout(self.bottomLayout)
+        self.GroupHeaderCard.vBoxLayout.addLayout(self.bottomLayout)
 
     def updateBasicSetting(self) -> None:
         """更新 `BasicSetting` 中的数据"""
