@@ -1,0 +1,221 @@
+{
+	"Version": 3,
+	"Meta": {
+		"Duration": 1.333,
+		"Fps": 30.0,
+		"Loop": true,
+		"AreBeziersRestricted": true,
+		"CurveCount": 11,
+		"TotalSegmentCount": 23,
+		"TotalPointCount": 58,
+		"UserDataCount": 0,
+		"TotalUserDataSize": 0
+	},
+	"Curves": [
+		{
+			"Target": "Parameter",
+			"Id": "Param11",
+			"Segments": [
+				0,
+				0,
+				0,
+				1.333,
+				0
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "Param45",
+			"Segments": [
+				0,
+				0,
+				0,
+				1.333,
+				0
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "Param46",
+			"Segments": [
+				0,
+				0,
+				1,
+				0.056,
+				0,
+				0.111,
+				0,
+				0.167,
+				5,
+				1,
+				0.278,
+				15.802,
+				0.389,
+				30,
+				0.5,
+				30,
+				0,
+				1.333,
+				30
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "Param49",
+			"Segments": [
+				0,
+				0,
+				0,
+				1.333,
+				0
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "Param52",
+			"Segments": [
+				0,
+				0,
+				0,
+				1.333,
+				0
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "Param54",
+			"Segments": [
+				0,
+				0,
+				0,
+				1.333,
+				0
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "Param55",
+			"Segments": [
+				0,
+				0,
+				0,
+				1.333,
+				0
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "ParamBrowLForm",
+			"Segments": [
+				0,
+				0,
+				1,
+				0.078,
+				0,
+				0.156,
+				-1,
+				0.233,
+				-1,
+				0,
+				1.333,
+				-1
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "ParamBrowRForm",
+			"Segments": [
+				0,
+				0,
+				1,
+				0.078,
+				0,
+				0.156,
+				-1,
+				0.233,
+				-1,
+				0,
+				1.333,
+				-1
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "ParamMouthForm",
+			"Segments": [
+				0,
+				0,
+				1,
+				0.078,
+				0,
+				0.156,
+				1,
+				0.233,
+				1,
+				1,
+				0.278,
+				1,
+				0.322,
+				1,
+				0.367,
+				1,
+				0,
+				1.333,
+				1
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Id": "ParamMouthOpenY",
+			"Segments": [
+				0,
+				0,
+				1,
+				0.078,
+				0,
+				0.156,
+				0.6,
+				0.233,
+				0.6,
+				1,
+				0.278,
+				0.6,
+				0.322,
+				0.6,
+				0.367,
+				0.6,
+				1,
+				0.411,
+				0.6,
+				0.456,
+				1,
+				0.5,
+				1,
+				1,
+				0.544,
+				1,
+				0.589,
+				0.8,
+				0.633,
+				0.8,
+				1,
+				0.678,
+				0.8,
+				0.722,
+				1,
+				0.767,
+				1,
+				1,
+				0.811,
+				1,
+				0.856,
+				0,
+				0.9,
+				0,
+				0,
+				1.333,
+				0
+			]
+		}
+	]
+}

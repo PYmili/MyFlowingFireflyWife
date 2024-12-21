@@ -1,0 +1,290 @@
+{
+  "Version": 3,
+  "Type": 0,
+  "FileReferences": {
+    "Moc": "Firefly.moc3",
+    "Textures": [
+      "Firefly.4096/texture_00.png"
+    ],
+    "Physics": "Firefly.physics3.json",
+    "PhysicsV2": {
+      "File": "Firefly.physics3.json"
+    },
+    "Motions": {
+      "表情组": [
+        {
+          "Name": "墨镜",
+          "Expression": "expression1.exp3",
+          "Interruptable": true
+        },
+        {
+          "Name": "猫耳",
+          "File": "animations/Scene02.motion3.json",
+          "Sound": "voice/meow.mp3",
+          "Expression": "expression2.exp3"
+        },
+        {
+          "Name": "裂开",
+          "Expression": "expression3.exp3"
+        },
+        {
+          "Name": "鄙夷",
+          "Expression": "expression4.exp3"
+        },
+        {
+          "Name": "生气",
+          "Expression": "expression5.exp3"
+        },
+        {
+          "Name": "问号",
+          "Expression": "expression6.exp3"
+        },
+        {
+          "Name": "眼泪",
+          "Expression": "expression7.exp3"
+        },
+        {
+          "Name": "流汗",
+          "Expression": "expression8.exp3"
+        },
+        {
+          "Name": "呆愣",
+          "Expression": "expression9.exp3"
+        },
+        {
+          "Name": "开心",
+          "Expression": "expression10.exp3"
+        }
+      ],
+      "动作组": [
+        {
+          "Name": "回正",
+          "File": "animations/Scene0.motion3.json",
+          "Sound": "voice/音频回正.mp3"
+        },
+        {
+          "Name": "变身",
+          "File": "animations/Scene1.motion3.json",
+          "Sound": "voice/点燃星海.mp3"
+        },
+        {
+          "Name": "捂手",
+          "File": "animations/Scene2.motion3.json",
+          "Sound": "voice/刺激的生活.mp3"
+        },
+        {
+          "Name": "拍手",
+          "File": "animations/Scene3.motion3.json",
+          "Sound": "晚安(1).mp3"
+        },
+        {
+          "Name": "思考",
+          "File": "animations/Scene4.motion3.json"
+        },
+        {
+          "Name": "抱胸",
+          "File": "animations/Scene5.motion3.json"
+        },
+        {
+          "Name": "叉腰",
+          "File": "animations/Scene6.motion3.json"
+        },
+        {
+          "Name": "叉腰开心",
+          "File": "animations/Scene7.motion3.json"
+        },
+        {
+          "Name": "会萤的",
+          "File": "animations/Scene22.motion3.json",
+          "Sound": "voice/会萤的.mp3"
+        },
+        {
+          "Name": "使一颗心免于哀伤",
+          "File": "animations/Scene26710.motion3.json",
+          "Sound": "voice/无梦-若风 - 使一颗心免于哀伤-流萤.mp3",
+          "SoundDelay": 800
+        }
+      ]
+    },
+    "Expressions": [
+      {
+        "Name": "expression1.exp3",
+        "File": "expression/expression1.exp3.json"
+      },
+      {
+        "Name": "expression10.exp3",
+        "File": "expression/expression10.exp3.json"
+      },
+      {
+        "Name": "expression2.exp3",
+        "File": "expression/expression2.exp3.json"
+      },
+      {
+        "Name": "expression3.exp3",
+        "File": "expression/expression3.exp3.json"
+      },
+      {
+        "Name": "expression4.exp3",
+        "File": "expression/expression4.exp3.json"
+      },
+      {
+        "Name": "expression5.exp3",
+        "File": "expression/expression5.exp3.json"
+      },
+      {
+        "Name": "expression6.exp3",
+        "File": "expression/expression6.exp3.json"
+      },
+      {
+        "Name": "expression7.exp3",
+        "File": "expression/expression7.exp3.json"
+      },
+      {
+        "Name": "expression8.exp3",
+        "File": "expression/expression8.exp3.json"
+      },
+      {
+        "Name": "expression9.exp3",
+        "File": "expression/expression9.exp3.json"
+      },
+      {
+        "Name": "Scene02.motion3",
+        "File": "animations/Scene02.motion3.json"
+      },
+      {
+        "Name": "Scene22.motion3",
+        "File": "animations/Scene22.motion3.json"
+      },
+      {
+        "Name": "Scene26710.motion3",
+        "File": "animations/Scene26710.motion3.json"
+      },
+      {
+        "Name": "Scene0.motion3",
+        "File": "animations/Scene0.motion3.json"
+      },
+      {
+        "Name": "Scene1.motion3",
+        "File": "animations/Scene1.motion3.json"
+      },
+      {
+        "Name": "Scene2.motion3",
+        "File": "animations/Scene2.motion3.json"
+      },
+      {
+        "Name": "Scene3.motion3",
+        "File": "animations/Scene3.motion3.json"
+      },
+      {
+        "Name": "Scene4.motion3",
+        "File": "animations/Scene4.motion3.json"
+      },
+      {
+        "Name": "Scene5.motion3",
+        "File": "animations/Scene5.motion3.json"
+      },
+      {
+        "Name": "Scene6.motion3",
+        "File": "animations/Scene6.motion3.json"
+      },
+      {
+        "Name": "Scene7.motion3",
+        "File": "animations/Scene7.motion3.json"
+      }
+    ]
+  },
+  "Controllers": {
+    "ParamHit": {},
+    "ParamLoop": {},
+    "KeyTrigger": {
+      "Items": [
+        {
+          "Input": 97,
+          "DownMtn": "表情组:墨镜"
+        },
+        {
+          "Input": 98,
+          "DownMtn": "表情组:猫耳"
+        },
+        {
+          "Input": 99,
+          "DownMtn": "表情组:裂开"
+        },
+        {
+          "Input": 100,
+          "DownMtn": "动作组:思考"
+        },
+        {
+          "Input": 101,
+          "DownMtn": "动作组:会萤的"
+        },
+        {
+          "Input": 102,
+          "DownMtn": "动作组:使一颗心免于哀伤"
+        },
+        {
+          "Input": 96,
+          "DownMtn": "动作组:回正"
+        }
+      ],
+      "Enabled": true
+    },
+    "ParamTrigger": {},
+    "AreaTrigger": {},
+    "HandTrigger": {},
+    "EyeBlink": {
+      "MinInterval": 500,
+      "MaxInterval": 6000,
+      "Items": [
+        {
+          "Id": "ParamEyeLOpen",
+          "Min": 0.0,
+          "Max": 1.0,
+          "BlendMode": 2,
+          "Input": 0
+        },
+        {
+          "Id": "ParamEyeROpen",
+          "Min": 0.0,
+          "Max": 1.0,
+          "BlendMode": 2,
+          "Input": 0
+        }
+      ],
+      "Enabled": true
+    },
+    "LipSync": {
+      "Gain": 5.0
+    },
+    "MouseTracking": {
+      "SmoothTime": 0.15,
+      "Enabled": true
+    },
+    "AutoBreath": {
+      "Enabled": true
+    },
+    "ExtraMotion": {
+      "Enabled": true
+    },
+    "Accelerometer": {
+      "Enabled": true
+    },
+    "Microphone": {},
+    "Transform": {},
+    "FaceTracking": {
+      "Enabled": true
+    },
+    "HandTracking": {},
+    "ParamValue": {},
+    "PartOpacity": {},
+    "ArtmeshOpacity": {},
+    "ArtmeshColor": {},
+    "ArtmeshCulling": {
+      "DefaultMode": 0
+    },
+    "IntimacySystem": {}
+  },
+  "Options": {
+    "TexType": 0
+  }
+}
