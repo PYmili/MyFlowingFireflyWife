@@ -75,8 +75,13 @@ class MainWindow(QFrame):
         self.GroupHeaderCard.vBoxLayout.addLayout(self.bottomLayout)
 
     def showLive2dEngineViewWindow(self) -> None:
-        self.live2dEnginView = Live2dEngineView.MainWindow()
-        self.live2dEnginView.show()
+        if self.live2dEnginView is None:
+            self.live2dEnginView = Live2dEngineView.MainWindow()
+            self.live2dEnginView.show()
+            return None
+        self.live2dEnginView.close()
+        self.live2dEnginView = None
+        self.showLive2dEngineViewWindow()
 
     def OkButtonEvent(self) -> None:
         """
@@ -94,5 +99,4 @@ class MainWindow(QFrame):
         with open(self.__path, "w", encoding="utf-8") as f:
             f.write(json.dumps(self.live2dConfigDict, indent=4, ensure_ascii=False))
 
-        if self.live2dEnginView is None:
-            self.showLive2dEngineViewWindow()
+        self.showLive2dEngineViewWindow()

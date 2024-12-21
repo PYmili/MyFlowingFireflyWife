@@ -1,0 +1,1 @@
+pyinstaller --onefile --add-data "src/*;." MyFlowingFireflyWife.py

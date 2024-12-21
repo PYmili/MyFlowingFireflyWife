@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.live2dConfigDict = readConfig()
         self.model_name = self.live2dConfigDict['current-model']
-        self.server_thread = Live2dHttpServer.FlaskThread(8080)
+        self.server_thread = Live2dHttpServer.FlaskThread(8687)
         # 启动HTTP服务器线程
         self.server_thread.started.connect(self.startedConnection)
         self.server_thread.start()

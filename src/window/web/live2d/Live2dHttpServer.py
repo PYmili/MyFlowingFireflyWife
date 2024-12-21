@@ -7,13 +7,13 @@ from flask import Flask, render_template, send_from_directory, abort
 class FlaskThread(QThread):
     started = Signal()
 
-    def __init__(self, port=8080):
+    def __init__(self, port=7878):
         super().__init__()
         self.port = port
         self.flask_app = Flask(
             __name__,
-            template_folder='templates',
-            static_folder='static'
+            template_folder=os.path.join(os.getcwd(), 'data', 'live2d', 'templates'),
+            static_folder=os.path.join(os.getcwd(), 'data', 'live2d', 'static')
         )
 
         @self.flask_app.route('/firefly')
